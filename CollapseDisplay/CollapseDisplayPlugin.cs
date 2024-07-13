@@ -19,7 +19,7 @@ namespace CollapseDisplay
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Gorakh";
         public const string PluginName = "CollapseDisplay";
-        public const string PluginVersion = "1.0.1";
+        public const string PluginVersion = "1.1.0";
 
         public static ConfigEntry<Color> CombatHealthBarHighlightColor { get; private set; }
 
