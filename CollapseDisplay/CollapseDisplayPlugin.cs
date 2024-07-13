@@ -285,8 +285,15 @@ namespace CollapseDisplay
                                 float fullCombinedHealth = healthComponent.fullCombinedHealth;
                                 float combinedHealth = healthComponent.health + healthComponent.shield;
 
-                                collapseBarInfo.normalizedXMax = Mathf.Clamp01(combinedHealth / fullCombinedHealth);
-                                collapseBarInfo.normalizedXMin = Mathf.Clamp01((combinedHealth - collapseDamage) / fullCombinedHealth);
+                                HealthBar.BarInfo instantHealthBarInfo = healthBar.barInfoCollection.instantHealthbarInfo;
+                                HealthBar.BarInfo curseBarInfo = healthBar.barInfoCollection.curseBarInfo;
+
+                                float healthBarMin = instantHealthBarInfo.normalizedXMin;
+                                float healthBarMax = curseBarInfo.enabled ? curseBarInfo.normalizedXMin : 1f;
+
+                                collapseBarInfo.normalizedXMin = Util.Remap(Mathf.Clamp01((combinedHealth - collapseDamage) / fullCombinedHealth), 0f, 1f, healthBarMin, healthBarMax);
+
+                                collapseBarInfo.normalizedXMax = Util.Remap(Mathf.Clamp01(combinedHealth / fullCombinedHealth), 0f, 1f, healthBarMin, healthBarMax);
                             }
                         }
                     }
