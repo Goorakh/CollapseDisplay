@@ -258,11 +258,14 @@ namespace CollapseDisplay
                                     stackDamage = healthComponent.fullHealth * 0.1f;
                                 }
 
+                                if (body.inventory)
+                                {
                                 int minHealthPercentageItemCount = body.inventory.GetItemCount(RoR2Content.Items.MinHealthPercentage);
                                 if (minHealthPercentageItemCount > 0)
                                 {
                                     float minHealth = healthComponent.fullCombinedHealth * (minHealthPercentageItemCount / 100f);
                                     stackDamage = Mathf.Max(0f, Mathf.Min(stackDamage, healthComponent.combinedHealth - minHealth));
+                                }
                                 }
 
                                 if (stackDamage > 0f)
