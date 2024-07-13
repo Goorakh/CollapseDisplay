@@ -19,7 +19,7 @@ namespace CollapseDisplay
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Gorakh";
         public const string PluginName = "CollapseDisplay";
-        public const string PluginVersion = "1.0.0";
+        public const string PluginVersion = "1.0.1";
 
         public static ConfigEntry<Color> CombatHealthBarHighlightColor { get; private set; }
 
@@ -233,8 +233,10 @@ namespace CollapseDisplay
                                 }
 
                                 float armor = body.armor + healthComponent.adaptiveArmorValue;
-                                stackDamage *= armor >= 0f ? 1f - (armor / (armor + 100f))
-                                                           : 2f - (100f / (100f - armor));
+                                float armorDamageMultiplier = armor >= 0f ? 1f - (armor / (armor + 100f))
+                                                                          : 2f - (100f / (100f - armor));
+
+                                stackDamage = Mathf.Max(1f, stackDamage * armorDamageMultiplier);
 
                                 if (body.inventory)
                                 {
@@ -260,12 +262,12 @@ namespace CollapseDisplay
 
                                 if (body.inventory)
                                 {
-                                int minHealthPercentageItemCount = body.inventory.GetItemCount(RoR2Content.Items.MinHealthPercentage);
-                                if (minHealthPercentageItemCount > 0)
-                                {
-                                    float minHealth = healthComponent.fullCombinedHealth * (minHealthPercentageItemCount / 100f);
-                                    stackDamage = Mathf.Max(0f, Mathf.Min(stackDamage, healthComponent.combinedHealth - minHealth));
-                                }
+                                    int minHealthPercentageItemCount = body.inventory.GetItemCount(RoR2Content.Items.MinHealthPercentage);
+                                    if (minHealthPercentageItemCount > 0)
+                                    {
+                                        float minHealth = healthComponent.fullCombinedHealth * (minHealthPercentageItemCount / 100f);
+                                        stackDamage = Mathf.Max(0f, Mathf.Min(stackDamage, healthComponent.combinedHealth - minHealth));
+                                    }
                                 }
 
                                 if (stackDamage > 0f)
