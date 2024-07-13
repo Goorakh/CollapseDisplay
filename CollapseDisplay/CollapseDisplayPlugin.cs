@@ -234,7 +234,7 @@ namespace CollapseDisplay
 
                                 float armor = body.armor + healthComponent.adaptiveArmorValue;
                                 stackDamage *= armor >= 0f ? 1f - (armor / (armor + 100f))
-                                                              : 2f - (100f / (100f - armor));
+                                                           : 2f - (100f / (100f - armor));
 
                                 if (body.inventory)
                                 {
