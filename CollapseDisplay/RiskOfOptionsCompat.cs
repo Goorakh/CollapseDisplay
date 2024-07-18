@@ -1,5 +1,6 @@
 ﻿using BepInEx.Bootstrap;
 using RiskOfOptions;
+using RiskOfOptions.OptionConfigs;
 using RiskOfOptions.Options;
 using System;
 using System.IO;
@@ -18,9 +19,20 @@ namespace CollapseDisplay
             const string MOD_GUID = CollapseDisplayPlugin.PluginGUID;
             const string MOD_NAME = "Collapse Display";
 
-            ModSettingsManager.AddOption(new ColorOption(CollapseDisplayPlugin.HUDHealthBarHighlightColor), MOD_GUID, MOD_NAME);
-            
-            ModSettingsManager.AddOption(new ColorOption(CollapseDisplayPlugin.CombatHealthBarHighlightColor), MOD_GUID, MOD_NAME);
+            for (int i = 0; i < CollapseDisplayPlugin.AllHealthBarDisplayOptions.Length; i++)
+            {
+                HealthBarCollapseDisplayOptions displayOptions = CollapseDisplayPlugin.AllHealthBarDisplayOptions[i];
+
+                ModSettingsManager.AddOption(new CheckBoxOption(displayOptions.EnabledConfig), MOD_GUID, MOD_NAME);
+
+                ModSettingsManager.AddOption(new ColorOption(displayOptions.IndicatorColorConfig), MOD_GUID, MOD_NAME);
+
+                ModSettingsManager.AddOption(new FloatFieldOption(displayOptions.IndicatorSizeDeltaMultiplier, new FloatFieldConfig
+                {
+                    FormatString = "{0}x",
+                    Min = 0f,
+                }), MOD_GUID, MOD_NAME);
+            }
 
             ModSettingsManager.SetModDescription("Options for Collapse Display", MOD_GUID, MOD_NAME);
 

@@ -1,3 +1,11 @@
+**1.2.0 Changes:**
+
+* Fixed clients in multiplayer not being able to see collapse damage. The mod now requires all players have it installed.
+
+* Added config options for disabling the collapse display on specific health bar types.
+
+* Added config options for controlling the size of the collapse bar.
+
 **1.1.0 Changes:**
 
 * Fixed collapse bar position and scale ignoring curse bar

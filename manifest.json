@@ -1,12 +1,13 @@
 ﻿{
 	"name": "CollapseDisplay",
 	"authorName": "Gorakh",
-	"version_number": "1.1.0",
+	"version_number": "1.2.0",
 	"website_url": "https://github.com/Goorakh/CollapseDisplay",
-	"description": "Displays how much damage Collapse will deal when it ends. Clientside.",
+	"description": "Displays how much damage Collapse will deal when it ends.",
 	"dependencies": [
 		"bbepis-BepInExPack-5.4.2113",
 		"RiskofThunder-HookGenPatcher-1.2.3",
-		"RiskofThunder-R2API_Core-5.1.0"
+		"RiskofThunder-R2API_Core-5.1.0",
+		"RiskofThunder-FixPluginTypesSerialization-1.0.4"
 	]
 }
