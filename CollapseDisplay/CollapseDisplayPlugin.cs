@@ -1,5 +1,4 @@
 using BepInEx;
-using BepInEx.Configuration;
 using HG;
 using RoR2.UI;
 using System;
