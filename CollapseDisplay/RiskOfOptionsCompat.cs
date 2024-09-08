@@ -1,4 +1,5 @@
 ﻿using BepInEx.Bootstrap;
+using CollapseDisplay.Config;
 using RiskOfOptions;
 using RiskOfOptions.OptionConfigs;
 using RiskOfOptions.Options;
@@ -13,26 +14,33 @@ namespace CollapseDisplay
     {
         public static bool Enabled => Chainloader.PluginInfos.ContainsKey("com.rune580.riskofoptions");
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         public static void Initialize()
         {
             const string MOD_GUID = CollapseDisplayPlugin.PluginGUID;
             const string MOD_NAME = "Collapse Display";
 
-            for (int i = 0; i < CollapseDisplayPlugin.AllHealthBarDisplayOptions.Length; i++)
+            static void addDisplayOptions(DelayedDamageDisplayOptions displayOptions)
             {
-                HealthBarCollapseDisplayOptions displayOptions = CollapseDisplayPlugin.AllHealthBarDisplayOptions[i];
+                ModSettingsManager.AddOption(new ColorOption(displayOptions.IndicatorColor), MOD_GUID, MOD_NAME);
 
-                ModSettingsManager.AddOption(new CheckBoxOption(displayOptions.EnabledConfig), MOD_GUID, MOD_NAME);
-
-                ModSettingsManager.AddOption(new ColorOption(displayOptions.IndicatorColorConfig), MOD_GUID, MOD_NAME);
-
-                ModSettingsManager.AddOption(new FloatFieldOption(displayOptions.IndicatorSizeDeltaMultiplier, new FloatFieldConfig
+                ModSettingsManager.AddOption(new FloatFieldOption(displayOptions.IndicatorScale, new FloatFieldConfig
                 {
-                    FormatString = "{0}x",
-                    Min = 0f,
+                    Min = 0f
                 }), MOD_GUID, MOD_NAME);
+
+                static void addDamageBarStyle(DelayedDamageBarStyle damageBarStyle)
+                {
+                    ModSettingsManager.AddOption(new CheckBoxOption(damageBarStyle.EnabledConfig), MOD_GUID, MOD_NAME);
+                }
+
+                addDamageBarStyle(displayOptions.HUDHealthBarStyle);
+                addDamageBarStyle(displayOptions.AllyListHealthBarStyle);
+                addDamageBarStyle(displayOptions.CombatHealthBarStyle);
             }
+
+            addDisplayOptions(CollapseDisplayPlugin.CollapseDisplayOptions);
+            addDisplayOptions(CollapseDisplayPlugin.WarpedEchoDisplayOptions);
 
             ModSettingsManager.SetModDescription("Options for Collapse Display", MOD_GUID, MOD_NAME);
 

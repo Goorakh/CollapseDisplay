@@ -3,7 +3,7 @@
 	"authorName": "Gorakh",
 	"version_number": "1.2.0",
 	"website_url": "https://github.com/Goorakh/CollapseDisplay",
-	"description": "Displays how much damage Collapse will deal when it ends.",
+	"description": "Displays how much damage Collapse and Warped Echo will deal on your health bar.",
 	"dependencies": [
 		"bbepis-BepInExPack-5.4.2113",
 		"RiskofThunder-HookGenPatcher-1.2.4",

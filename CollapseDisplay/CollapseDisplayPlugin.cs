@@ -1,4 +1,6 @@
 using BepInEx;
+using BepInEx.Configuration;
+using CollapseDisplay.Config;
 using HG;
 using RoR2.UI;
 using System;
@@ -20,26 +22,11 @@ namespace CollapseDisplay
 
         internal static CollapseDisplayPlugin Instance { get; private set; }
 
+        public static DelayedDamageDisplayOptions CollapseDisplayOptions { get; private set; }
+
+        public static DelayedDamageDisplayOptions WarpedEchoDisplayOptions { get; private set; }
+
         static Sprite _healthBarHighlight;
-
-        static HealthBarCollapseDisplayOptions _hudHealthBarOptions;
-        static HealthBarCollapseDisplayOptions _allyListHealthBarOptions;
-        static HealthBarCollapseDisplayOptions _combatHealthBarOptions;
-        static HealthBarCollapseDisplayOptions _fallbackHealthBarOptions;
-
-        internal static ReadOnlyArray<HealthBarCollapseDisplayOptions> AllHealthBarDisplayOptions { get; private set; }
-
-        internal static HealthBarCollapseDisplayOptions GetDisplayOptions(HealthBarType barType)
-        {
-            return barType switch
-            {
-                HealthBarType.Hud => _hudHealthBarOptions,
-                HealthBarType.Combat => _combatHealthBarOptions,
-                HealthBarType.AllyList => _allyListHealthBarOptions,
-                HealthBarType.Unknown => _fallbackHealthBarOptions,
-                _ => throw new NotImplementedException($"{barType} is not implemented"),
-            };
-        }
 
         void Awake()
         {
@@ -61,33 +48,19 @@ namespace CollapseDisplay
                 _healthBarHighlight = null;
             }
 
-            _hudHealthBarOptions = new HealthBarCollapseDisplayOptions(Config, "Player HUD", new HealthBarStyle.BarStyle
-            {
-                enabled = true,
-                imageType = Image.Type.Sliced,
-                sizeDelta = 5f,
-                sprite = _healthBarHighlight ?? Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/texUIHighlightExecute.png").WaitForCompletion()
-            });
+            Sprite healthBarHighlight = _healthBarHighlight ? _healthBarHighlight : Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/texUIHighlightExecute.png").WaitForCompletion();
 
-            _allyListHealthBarOptions = new HealthBarCollapseDisplayOptions(Config, "Ally List", new HealthBarStyle.BarStyle
-            {
-                enabled = true,
-                imageType = Image.Type.Sliced,
-                sizeDelta = 1f,
-                sprite = _healthBarHighlight ?? Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/texUIHighlightExecute.png").WaitForCompletion()
-            });
+            CollapseDisplayOptions = new DelayedDamageDisplayOptions(healthBarHighlight,
+                                                                     Config,
+                                                                     "Collapse",
+                                                                     new Color(0.9882353f, 0.14509805f, 0.25882354f, 1f),
+                                                                     1f);
 
-            _combatHealthBarOptions = new HealthBarCollapseDisplayOptions(Config, "Enemy", new HealthBarStyle.BarStyle
-            {
-                enabled = true,
-                imageType = Image.Type.Sliced,
-                sizeDelta = 1f,
-                sprite = _healthBarHighlight ?? Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/texUIHighlightExecute.png").WaitForCompletion()
-            });
-
-            _fallbackHealthBarOptions = _combatHealthBarOptions;
-
-            AllHealthBarDisplayOptions = new ReadOnlyArray<HealthBarCollapseDisplayOptions>([_hudHealthBarOptions, _allyListHealthBarOptions, _combatHealthBarOptions]);
+            WarpedEchoDisplayOptions = new DelayedDamageDisplayOptions(healthBarHighlight,
+                                                                       Config,
+                                                                       "Warped Echo",
+                                                                       new Color(0.63529414f, 0.5921569f, 0.5529412f, 1f),
+                                                                       1f);
 
             if (RiskOfOptionsCompat.Enabled)
             {
@@ -96,7 +69,7 @@ namespace CollapseDisplay
 
             HealthBarTypeRegistration.Initialize();
             HealthBarHooks.Initialize();
-            CollapseDamageProviderHooks.Initialize();
+            DelayedDamageProviderHooks.Initialize();
 
             stopwatch.Stop();
             Log.Info_NoCallerPrefix($"Initialized in {stopwatch.Elapsed.TotalSeconds:F2} seconds");
@@ -106,7 +79,7 @@ namespace CollapseDisplay
         {
             HealthBarTypeRegistration.Cleanup();
             HealthBarHooks.Cleanup();
-            CollapseDamageProviderHooks.Cleanup();
+            DelayedDamageProviderHooks.Cleanup();
 
             Instance = SingletonHelper.Unassign(Instance, this);
         }

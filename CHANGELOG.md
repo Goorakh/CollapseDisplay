@@ -1,3 +1,9 @@
+**?.?.? Changes:**
+
+* Fixed for SotS
+
+* Added display for incoming damage from Warped Echo
+
 **1.2.0 Changes:**
 
 * Fixed clients in multiplayer not being able to see collapse damage. The mod now requires all players have it installed.

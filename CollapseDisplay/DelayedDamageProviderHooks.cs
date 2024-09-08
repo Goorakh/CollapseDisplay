@@ -2,7 +2,7 @@
 
 namespace CollapseDisplay
 {
-    static class CollapseDamageProviderHooks
+    static class DelayedDamageProviderHooks
     {
         public static void Initialize()
         {
@@ -18,7 +18,7 @@ namespace CollapseDisplay
         {
             orig(self);
 
-            self.gameObject.AddComponent<CollapseDamageProvider>();
+            self.gameObject.AddComponent<DelayedDamageProvider>();
         }
     }
 }
