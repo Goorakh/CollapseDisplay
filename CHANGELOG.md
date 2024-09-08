@@ -1,4 +1,4 @@
-**?.?.? Changes:**
+**1.3.0 Changes:**
 
 * Fixed for SotS
 

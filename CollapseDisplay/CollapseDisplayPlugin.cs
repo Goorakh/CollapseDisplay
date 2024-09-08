@@ -1,13 +1,8 @@
 using BepInEx;
-using BepInEx.Configuration;
 using CollapseDisplay.Config;
-using HG;
-using RoR2.UI;
-using System;
 using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.UI;
 
 namespace CollapseDisplay
 {
@@ -18,7 +13,7 @@ namespace CollapseDisplay
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Gorakh";
         public const string PluginName = "CollapseDisplay";
-        public const string PluginVersion = "1.2.0";
+        public const string PluginVersion = "1.3.0";
 
         internal static CollapseDisplayPlugin Instance { get; private set; }
 
