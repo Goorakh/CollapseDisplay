@@ -4,7 +4,6 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using RoR2;
 using RoR2.UI;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace CollapseDisplay
