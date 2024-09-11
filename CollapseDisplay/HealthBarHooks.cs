@@ -27,7 +27,16 @@ namespace CollapseDisplay
             MethodReference handleBarMethod = null;
             VariableDefinition localsVar;
 
-            if (c.TryGotoNext(x => x.MatchCallOrCallvirt(out handleBarMethod) && handleBarMethod.Name.StartsWith("<ApplyBars>g__HandleBar|")))
+            static bool nameStartsWith(MethodReference methodReference, string value)
+            {
+                // This is dumb
+                if (methodReference == null || methodReference.Name == null)
+                    return false;
+
+                return methodReference.Name.StartsWith(value);
+            }
+
+            if (c.TryGotoNext(x => x.MatchCallOrCallvirt(out handleBarMethod) && nameStartsWith(handleBarMethod, "<ApplyBars>g__HandleBar|")))
             {
                 int localsVarIndex = -1;
                 if (c.TryGotoPrev(x => x.MatchLdloca(out localsVarIndex)))
