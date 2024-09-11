@@ -1,3 +1,7 @@
+**1.3.1 Changes:**
+
+* Fixed a mod compatibility issue
+
 **1.3.0 Changes:**
 
 * Fixed for SotS
