@@ -1,4 +1,4 @@
-**-.-.- Changes:**
+**1.3.3 Changes:**
 
 * Fixed a couple cases where the displayed damage (primarily Warped Echo) would be incorrect
 
