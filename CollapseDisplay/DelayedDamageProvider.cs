@@ -62,6 +62,7 @@ namespace CollapseDisplay
                             DamageInfo stackDamageInfo = new DamageInfo
                             {
                                 attacker = dotStack.attackerObject,
+                                damageType = dotStack.damageType | DamageType.DoT,
                                 damage = stackDamage
                             };
 
@@ -73,12 +74,10 @@ namespace CollapseDisplay
                             }
                         }
 
-                        if (float.IsInfinity(minDotTimer))
+                        if (float.IsFinite(minDotTimer) && minDotTimer > 0f)
                         {
-                            minDotTimer = 0f;
+                            collapseDamage.DamageTimestamp = Run.FixedTimeStamp.now + minDotTimer;
                         }
-
-                        collapseDamage.DamageTimestamp = Run.FixedTimeStamp.now + minDotTimer;
                     }
                 }
 
@@ -103,12 +102,10 @@ namespace CollapseDisplay
                         }
                     }
 
-                    if (float.IsInfinity(minDamageDelay))
+                    if (float.IsFinite(minDamageDelay) && minDamageDelay > 0f)
                     {
-                        minDamageDelay = 0f;
+                        warpedEchoDamage.DamageTimestamp = Run.FixedTimeStamp.now + minDamageDelay;
                     }
-
-                    warpedEchoDamage.DamageTimestamp = Run.FixedTimeStamp.now + minDamageDelay;
                 }
             }
 
@@ -118,7 +115,25 @@ namespace CollapseDisplay
 
         void modifyIncomingDamage(ref float damage, DamageInfo damageInfo)
         {
-            TeamIndex attackerTeamIndex = TeamComponent.GetObjectTeam(damageInfo.attacker);
+            bool isCrit = damageInfo.crit;
+
+            bool bypassArmor = (damageInfo.damageType & DamageType.BypassArmor) != 0;
+
+            CharacterMaster attackerMaster = null;
+            CharacterBody attackerBody = null;
+            TeamIndex attackerTeamIndex = TeamIndex.None;
+            Vector3 damagePositionToAttackerVector = Vector3.zero;
+            float victimCombinedHealth = _healthComponent.combinedHealth;
+            if (damageInfo.attacker)
+            {
+                attackerBody = damageInfo.attacker.GetComponent<CharacterBody>();
+                if (attackerBody)
+                {
+                    attackerTeamIndex = attackerBody.teamComponent.teamIndex;
+                    damagePositionToAttackerVector = attackerBody.corePosition - damageInfo.position;
+                }
+            }
+
             if (attackerTeamIndex == _body.teamComponent.teamIndex)
             {
                 TeamDef attackerTeamDef = TeamCatalog.GetTeamDef(attackerTeamIndex);
@@ -128,30 +143,33 @@ namespace CollapseDisplay
                 }
             }
 
-            if (damageInfo.attacker && damageInfo.attacker.TryGetComponent(out CharacterBody attackerBody))
+            if (attackerBody)
             {
-                if (attackerBody.inventory)
+                if (attackerBody.canPerformBackstab && (damageInfo.damageType & DamageType.DoT) == 0 && (damageInfo.procChainMask.HasProc(ProcType.Backstab) || BackstabManager.IsBackstab(-damagePositionToAttackerVector, _body)))
                 {
-                    if (_healthComponent.combinedHealth > _healthComponent.fullCombinedHealth * 0.9f)
+                    isCrit = true;
+                }
+
+                attackerMaster = attackerBody.master;
+
+                if (attackerMaster && attackerMaster.inventory)
+                {
+                    if (victimCombinedHealth >= _healthComponent.fullCombinedHealth * 0.9f)
                     {
-                        int crowbarItemCount = attackerBody.inventory.GetItemCount(RoR2Content.Items.Crowbar);
+                        int crowbarItemCount = attackerMaster.inventory.GetItemCount(RoR2Content.Items.Crowbar);
                         if (crowbarItemCount > 0)
                         {
                             damage *= 1f + (0.75f * crowbarItemCount);
                         }
                     }
 
-                    int nearbyDamageBonusItemCount = attackerBody.inventory.GetItemCount(RoR2Content.Items.NearbyDamageBonus);
-                    if (nearbyDamageBonusItemCount > 0)
+                    int nearbyDamageBonusItemCount = attackerMaster.inventory.GetItemCount(RoR2Content.Items.NearbyDamageBonus);
+                    if (nearbyDamageBonusItemCount > 0 && damagePositionToAttackerVector.sqrMagnitude <= 13f * 13f)
                     {
-                        Vector3 vectorToAttacker = attackerBody.corePosition - _body.corePosition;
-                        if (vectorToAttacker.sqrMagnitude <= 13f * 13f)
-                        {
-                            damage *= 1f + (nearbyDamageBonusItemCount * 0.2f);
-                        }
+                        damage *= 1f + (nearbyDamageBonusItemCount * 0.2f);
                     }
 
-                    int fragileDamageBonusItemCount = attackerBody.inventory.GetItemCount(DLC1Content.Items.FragileDamageBonus);
+                    int fragileDamageBonusItemCount = attackerMaster.inventory.GetItemCount(DLC1Content.Items.FragileDamageBonus);
                     if (fragileDamageBonusItemCount > 0)
                     {
                         damage *= 1f + (fragileDamageBonusItemCount * 0.2f);
@@ -159,19 +177,38 @@ namespace CollapseDisplay
 
                     if (attackerBody.HasBuff(DLC2Content.Buffs.LowerHealthHigherDamageBuff))
                     {
-                        int lowerHealthHigherDamageItemCount = attackerBody.inventory.GetItemCount(DLC2Content.Items.LowerHealthHigherDamage);
+                        int lowerHealthHigherDamageItemCount = attackerMaster.inventory.GetItemCount(DLC2Content.Items.LowerHealthHigherDamage);
                         damage *= 1f + (lowerHealthHigherDamageItemCount * 0.2f);
+                    }
+
+                    if (damageInfo.procCoefficient > 0f)
+                    {
+                        if (_body.HasBuff(RoR2Content.Buffs.MercExpose) && attackerBody.bodyIndex == BodyCatalog.FindBodyIndex("MercBody"))
+                        {
+                            float exposeDamage = attackerBody.damage * 3.5f;
+                            damage += exposeDamage;
+                        }
                     }
 
                     if (_body.isBoss)
                     {
-                        int bossDamageBonusItemCount = attackerBody.inventory.GetItemCount(RoR2Content.Items.BossDamageBonus);
+                        int bossDamageBonusItemCount = attackerMaster.inventory.GetItemCount(RoR2Content.Items.BossDamageBonus);
                         if (bossDamageBonusItemCount > 0)
                         {
                             damage *= 1f + (0.2f * bossDamageBonusItemCount);
                         }
                     }
                 }
+
+                if (isCrit)
+                {
+                    damage *= attackerBody.critMultiplier;
+                }
+            }
+
+            if ((damageInfo.damageType & DamageType.WeakPointHit) != 0)
+            {
+                damage *= 1.5f;
             }
 
             if (_body.HasBuff(RoR2Content.Buffs.DeathMark))
@@ -179,18 +216,28 @@ namespace CollapseDisplay
                 damage *= 1.5f;
             }
 
-            float armor = _body.armor + _healthComponent.adaptiveArmorValue;
-            float armorDamageMultiplier = armor >= 0f ? 1f - (armor / (armor + 100f))
-                                                      : 2f - (100f / (100f - armor));
-
-            damage = Mathf.Max(1f, damage * armorDamageMultiplier);
-
-            if (_body.inventory)
+            if (!bypassArmor)
             {
-                int armorPlateItemCount = _body.inventory.GetItemCount(RoR2Content.Items.ArmorPlate);
-                if (armorPlateItemCount > 0)
+                float armor = _body.armor;
+                armor += _healthComponent.adaptiveArmorValue;
+
+                if ((_body.bodyFlags & CharacterBody.BodyFlags.ResistantToAOE) != 0 && (damageInfo.damageType & DamageType.AOE) != 0)
                 {
-                    damage = Mathf.Max(1f, damage - (5f * armorPlateItemCount));
+                    armor += 300f;
+                }
+
+                float armorDamageMultiplier = armor >= 0f ? 1f - (armor / (armor + 100f))
+                                                          : 2f - (100f / (100f - armor));
+
+                damage = Mathf.Max(1f, damage * armorDamageMultiplier);
+
+                if (_body.inventory)
+                {
+                    int armorPlateItemCount = _body.inventory.GetItemCount(RoR2Content.Items.ArmorPlate);
+                    if (armorPlateItemCount > 0)
+                    {
+                        damage = Mathf.Max(1f, damage - (5f * armorPlateItemCount));
+                    }
                 }
             }
 
@@ -200,6 +247,12 @@ namespace CollapseDisplay
                 float maxAllowedDamage = Mathf.Max(0f, unprotectedHealth - _healthComponent.serverDamageTakenThisUpdate);
 
                 damage = Mathf.Min(damage, maxAllowedDamage);
+            }
+
+            if ((damageInfo.damageType & DamageType.BonusToLowHealth) != 0)
+            {
+                float lowHealthDamageMultiplier = Mathf.Lerp(3f, 1f, _healthComponent.combinedHealthFraction);
+                damage *= lowHealthDamageMultiplier;
             }
 
             if (_body.HasBuff(RoR2Content.Buffs.LunarShell) && damage > _healthComponent.fullHealth * 0.1f)

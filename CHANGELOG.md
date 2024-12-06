@@ -1,3 +1,7 @@
+**-.-.- Changes:**
+
+* Fixed a couple cases where the displayed damage (primarily Warped Echo) would be incorrect
+
 **1.3.1 Changes:**
 
 * Fixed a mod compatibility issue
