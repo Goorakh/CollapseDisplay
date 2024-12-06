@@ -5,12 +5,41 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using RoR2;
 using RoR2.UI;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace CollapseDisplay
 {
     static class HealthBarHooks
     {
+        readonly struct AdditionalBarInfos
+        {
+            public static readonly FieldInfo[] BarInfoFields = typeof(AdditionalBarInfos).GetFields(BindingFlags.Public | BindingFlags.Instance)
+                                                                                         .Where(f => f.FieldType == typeof(HealthBar.BarInfo))
+                                                                                         .ToArray();
+
+            public readonly HealthBar.BarInfo CollapseDamageBarInfo;
+            public readonly HealthBar.BarInfo WarpedEchoDamageBarInfo;
+
+            public readonly int EnabledBarCount;
+
+            public AdditionalBarInfos(HealthBar.BarInfo collapseDamageBarInfo, HealthBar.BarInfo warpedEchoDamageBarInfo)
+            {
+                int enabledBarCount = 0;
+                CollapseDamageBarInfo = collapseDamageBarInfo;
+                if (CollapseDamageBarInfo.enabled)
+                    enabledBarCount++;
+
+                WarpedEchoDamageBarInfo = warpedEchoDamageBarInfo;
+                if (WarpedEchoDamageBarInfo.enabled)
+                    enabledBarCount++;
+
+                EnabledBarCount = enabledBarCount;
+            }
+        }
+
         public static void Initialize()
         {
             IL.RoR2.UI.HealthBar.ApplyBars += HealthBar_ApplyBars;
@@ -58,126 +87,23 @@ namespace CollapseDisplay
 
             c.Index = 0;
 
-            const int NUM_BAR_INFOS = 2;
-            VariableDefinition[] customBarInfoVars = new VariableDefinition[NUM_BAR_INFOS];
-
-            for (int i = 0; i < NUM_BAR_INFOS; i++)
-            {
-                customBarInfoVars[i] = il.AddVariable<HealthBar.BarInfo>();
-            }
+            VariableDefinition damageDisplayBarInfos = il.AddVariable<AdditionalBarInfos>();
 
             c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate(collectBarInfos);
 
-            for (int i = 0; i < NUM_BAR_INFOS; i++)
-            {
-                c.Emit(OpCodes.Ldloca, customBarInfoVars[i]);
-            }
-            
-            c.EmitDelegate(getDelayDamageBarInfos);
-            static void getDelayDamageBarInfos(HealthBar healthBar, out HealthBar.BarInfo collapseBarInfo, out HealthBar.BarInfo warpedEchoBarInfo)
-            {
-                HealthBarType healthBarType = HealthBarType.Unknown;
-                if (healthBar.TryGetComponent(out HealthBarTypeProvider healthBarTypeProvider))
-                {
-                    healthBarType = healthBarTypeProvider.Type;
-                }
-
-                DelayedDamageDisplayOptions collapseDisplayOptions = CollapseDisplayPlugin.CollapseDisplayOptions;
-                DelayedDamageBarStyle collapseDamageBarStyle = collapseDisplayOptions.GetDamageBarStyle(healthBarType);
-
-                HealthBarStyle.BarStyle collapseIndicatorStyle = collapseDamageBarStyle.BarStyle;
-                collapseBarInfo = new HealthBar.BarInfo
-                {
-                    enabled = false,
-                    color = collapseIndicatorStyle.baseColor,
-                    sprite = collapseIndicatorStyle.sprite,
-                    imageType = collapseIndicatorStyle.imageType,
-                    sizeDelta = collapseIndicatorStyle.sizeDelta,
-                    normalizedXMin = 0f,
-                    normalizedXMax = 0
-                };
-
-                DelayedDamageDisplayOptions warpedEchoDisplayOptions = CollapseDisplayPlugin.WarpedEchoDisplayOptions;
-                DelayedDamageBarStyle warpedEchoDamageBarStyle = warpedEchoDisplayOptions.GetDamageBarStyle(healthBarType);
-
-                HealthBarStyle.BarStyle warpedEchoIndicatorStyle = warpedEchoDamageBarStyle.BarStyle;
-                warpedEchoBarInfo = new HealthBar.BarInfo
-                {
-                    enabled = false,
-                    color = warpedEchoIndicatorStyle.baseColor,
-                    sprite = warpedEchoIndicatorStyle.sprite,
-                    imageType = warpedEchoIndicatorStyle.imageType,
-                    sizeDelta = warpedEchoIndicatorStyle.sizeDelta,
-                    normalizedXMin = 0f,
-                    normalizedXMax = 0f
-                };
-
-                HealthComponent healthComponent = healthBar.source;
-                if (healthComponent && healthComponent.TryGetComponent(out DelayedDamageProvider delayedDamageProvider))
-                {
-                    float totalBarDamageAmount = 0f;
-
-                    void addBar(ref HealthBar.BarInfo barInfo, float damageAmount)
-                    {
-                        barInfo.enabled = true;
-
-                        HealthComponent.HealthBarValues healthBarValues = healthComponent.GetHealthBarValues();
-
-                        float currentHealth = healthComponent.combinedHealth;
-                        float fullCombinedHealth = healthComponent.fullCombinedHealth;
-
-                        float barEndHealthValue = Mathf.Max(0f, currentHealth - totalBarDamageAmount);
-                        float barStartHealthValue = Mathf.Max(0f, barEndHealthValue - damageAmount);
-
-                        float nonCurseFraction = 1f - healthBarValues.curseFraction;
-
-                        float xMin = (barStartHealthValue / fullCombinedHealth) * nonCurseFraction;
-                        barInfo.normalizedXMin = Mathf.Clamp01(xMin);
-
-                        float xMax = (barEndHealthValue / fullCombinedHealth) * nonCurseFraction;
-                        barInfo.normalizedXMax = Mathf.Clamp01(xMax);
-
-                        totalBarDamageAmount += Mathf.Max(0f, barEndHealthValue - barStartHealthValue);
-                    }
-
-                    void tryAddDelayedDamageBar(DelayedDamageInfo delayedDamageInfo, ref HealthBar.BarInfo barInfo)
-                    {
-                        if (delayedDamageInfo.DamageTimestamp.timeUntil > 0f)
-                        {
-                            float warpedEchoDisplayedDamage = delayedDamageInfo.Damage - healthComponent.barrier;
-                            if (warpedEchoDisplayedDamage > 0f)
-                            {
-                                addBar(ref barInfo, warpedEchoDisplayedDamage);
-                            }
-                        }
-                    }
-
-                    if (warpedEchoDamageBarStyle.EnabledConfig.Value)
-                    {
-                        tryAddDelayedDamageBar(delayedDamageProvider.WarpedEchoDamage, ref warpedEchoBarInfo);
-                    }
-
-                    if (collapseDamageBarStyle.EnabledConfig.Value)
-                    {
-                        tryAddDelayedDamageBar(delayedDamageProvider.CollapseDamage, ref collapseBarInfo);
-                    }
-                }
-            }
+            c.Emit(OpCodes.Stloc, damageDisplayBarInfos);
 
             if (c.TryGotoNext(MoveType.After,
                               x => x.MatchCallOrCallvirt<HealthBar.BarInfoCollection>(nameof(HealthBar.BarInfoCollection.GetActiveCount))))
             {
+                c.Emit(OpCodes.Ldloca, damageDisplayBarInfos);
+                c.EmitDelegate(addDamageDisplayBarsToCount);
 
-                for (int i = 0; i < NUM_BAR_INFOS; i++)
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                static int addDamageDisplayBarsToCount(int activeCount, in AdditionalBarInfos damageDisplayBarInfos)
                 {
-                    c.Emit(OpCodes.Ldloca, customBarInfoVars[i]);
-                    c.EmitDelegate(check);
-                    c.Emit(OpCodes.Add);
-                }
-
-                static int check(in HealthBar.BarInfo barInfo)
-                {
-                    return barInfo.enabled ? 1 : 0;
+                    return activeCount + damageDisplayBarInfos.EnabledBarCount;
                 }
             }
             else
@@ -186,23 +112,116 @@ namespace CollapseDisplay
                 return;
             }
 
-            if (!c.TryGotoNext(MoveType.Before,
+            if (!c.TryGotoNext(MoveType.AfterLabel,
                                x => x.MatchRet()))
             {
                 Log.Error("Failed to find patch location");
                 return;
             }
 
-            for (int i = 0; i < NUM_BAR_INFOS; i++)
+            foreach (FieldInfo barInfoField in AdditionalBarInfos.BarInfoFields)
             {
                 c.Emit(OpCodes.Ldarg_0);
 
-                c.Emit(OpCodes.Ldloca, customBarInfoVars[i]);
+                c.Emit(OpCodes.Ldloca, damageDisplayBarInfos);
+                c.Emit(OpCodes.Ldflda, barInfoField);
 
                 c.Emit(OpCodes.Ldloca, localsVar);
 
                 c.Emit(OpCodes.Call, handleBarMethod);
             }
+        }
+
+        static AdditionalBarInfos collectBarInfos(HealthBar healthBar)
+        {
+            HealthBarType healthBarType = HealthBarType.Unknown;
+            if (healthBar.TryGetComponent(out HealthBarTypeProvider healthBarTypeProvider))
+            {
+                healthBarType = healthBarTypeProvider.Type;
+            }
+
+            DelayedDamageDisplayOptions collapseDisplayOptions = CollapseDisplayPlugin.CollapseDisplayOptions;
+            DelayedDamageBarStyle collapseDamageBarStyle = collapseDisplayOptions.GetDamageBarStyle(healthBarType);
+
+            HealthBarStyle.BarStyle collapseIndicatorStyle = collapseDamageBarStyle.BarStyle;
+            HealthBar.BarInfo collapseBarInfo = new HealthBar.BarInfo
+            {
+                enabled = false,
+                color = collapseIndicatorStyle.baseColor,
+                sprite = collapseIndicatorStyle.sprite,
+                imageType = collapseIndicatorStyle.imageType,
+                sizeDelta = collapseIndicatorStyle.sizeDelta,
+                normalizedXMin = 0f,
+                normalizedXMax = 0
+            };
+
+            DelayedDamageDisplayOptions warpedEchoDisplayOptions = CollapseDisplayPlugin.WarpedEchoDisplayOptions;
+            DelayedDamageBarStyle warpedEchoDamageBarStyle = warpedEchoDisplayOptions.GetDamageBarStyle(healthBarType);
+
+            HealthBarStyle.BarStyle warpedEchoIndicatorStyle = warpedEchoDamageBarStyle.BarStyle;
+            HealthBar.BarInfo warpedEchoBarInfo = new HealthBar.BarInfo
+            {
+                enabled = false,
+                color = warpedEchoIndicatorStyle.baseColor,
+                sprite = warpedEchoIndicatorStyle.sprite,
+                imageType = warpedEchoIndicatorStyle.imageType,
+                sizeDelta = warpedEchoIndicatorStyle.sizeDelta,
+                normalizedXMin = 0f,
+                normalizedXMax = 0f
+            };
+
+            HealthComponent healthComponent = healthBar.source;
+            if (healthComponent && healthComponent.TryGetComponent(out DelayedDamageProvider delayedDamageProvider))
+            {
+                float totalBarDamageAmount = 0f;
+
+                void addBar(ref HealthBar.BarInfo barInfo, float damageAmount)
+                {
+                    barInfo.enabled = true;
+
+                    HealthComponent.HealthBarValues healthBarValues = healthComponent.GetHealthBarValues();
+
+                    float currentHealth = healthComponent.combinedHealth;
+                    float fullCombinedHealth = healthComponent.fullCombinedHealth;
+
+                    float barEndHealthValue = Mathf.Max(0f, currentHealth - totalBarDamageAmount);
+                    float barStartHealthValue = Mathf.Max(0f, barEndHealthValue - damageAmount);
+
+                    float nonCurseFraction = 1f - healthBarValues.curseFraction;
+
+                    float xMin = (barStartHealthValue / fullCombinedHealth) * nonCurseFraction;
+                    barInfo.normalizedXMin = Mathf.Clamp01(xMin);
+
+                    float xMax = (barEndHealthValue / fullCombinedHealth) * nonCurseFraction;
+                    barInfo.normalizedXMax = Mathf.Clamp01(xMax);
+
+                    totalBarDamageAmount += Mathf.Max(0f, barEndHealthValue - barStartHealthValue);
+                }
+
+                void tryAddDelayedDamageBar(DelayedDamageInfo delayedDamageInfo, ref HealthBar.BarInfo barInfo)
+                {
+                    if (delayedDamageInfo.DamageTimestamp.timeUntil > 0f)
+                    {
+                        float warpedEchoDisplayedDamage = delayedDamageInfo.Damage - healthComponent.barrier;
+                        if (warpedEchoDisplayedDamage > 0f)
+                        {
+                            addBar(ref barInfo, warpedEchoDisplayedDamage);
+                        }
+                    }
+                }
+
+                if (warpedEchoDamageBarStyle.EnabledConfig.Value)
+                {
+                    tryAddDelayedDamageBar(delayedDamageProvider.WarpedEchoDamage, ref warpedEchoBarInfo);
+                }
+
+                if (collapseDamageBarStyle.EnabledConfig.Value)
+                {
+                    tryAddDelayedDamageBar(delayedDamageProvider.CollapseDamage, ref collapseBarInfo);
+                }
+            }
+
+            return new AdditionalBarInfos(collapseBarInfo, warpedEchoBarInfo);
         }
     }
 }
