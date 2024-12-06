@@ -1,24 +1,45 @@
 ﻿using RoR2;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace CollapseDisplay
 {
     static class DelayedDamageProviderHooks
     {
+        static readonly List<DelayedDamageProvider> _delayedDamageProviderPrefabComponents = [];
+
         public static void Initialize()
         {
-            On.RoR2.HealthComponent.Awake += HealthComponent_Awake;
+            destroyAllPrefabComponents();
+            BodyCatalog.availability.CallWhenAvailable(() =>
+            {
+                if (_delayedDamageProviderPrefabComponents.Capacity < BodyCatalog.bodyCount)
+                    _delayedDamageProviderPrefabComponents.Capacity = BodyCatalog.bodyCount;
+
+                foreach (GameObject bodyPrefab in BodyCatalog.allBodyPrefabs)
+                {
+                    if (bodyPrefab.GetComponent<HealthComponent>())
+                    {
+                        DelayedDamageProvider delayedDamageProvider = bodyPrefab.AddComponent<DelayedDamageProvider>();
+                        _delayedDamageProviderPrefabComponents.Add(delayedDamageProvider);
+                    }
+                }
+            });
         }
 
         public static void Cleanup()
         {
-            On.RoR2.HealthComponent.Awake -= HealthComponent_Awake;
+            destroyAllPrefabComponents();
         }
 
-        static void HealthComponent_Awake(On.RoR2.HealthComponent.orig_Awake orig, HealthComponent self)
+        static void destroyAllPrefabComponents()
         {
-            orig(self);
+            foreach (DelayedDamageProvider delayedDamageProvider in _delayedDamageProviderPrefabComponents)
+            {
+                GameObject.Destroy(delayedDamageProvider);
+            }
 
-            self.gameObject.AddComponent<DelayedDamageProvider>();
+            _delayedDamageProviderPrefabComponents.Clear();
         }
     }
 }
