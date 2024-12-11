@@ -19,8 +19,6 @@ namespace CollapseDisplay
 
         public static DelayedDamageDisplayOptions CollapseDisplayOptions { get; private set; }
 
-        public static DelayedDamageDisplayOptions WarpedEchoDisplayOptions { get; private set; }
-
         static Sprite _healthBarHighlight;
 
         void Awake()
@@ -50,12 +48,6 @@ namespace CollapseDisplay
                                                                      "Collapse",
                                                                      new Color(0.9882353f, 0.14509805f, 0.25882354f, 1f),
                                                                      1f);
-
-            WarpedEchoDisplayOptions = new DelayedDamageDisplayOptions(healthBarHighlight,
-                                                                       Config,
-                                                                       "Warped Echo",
-                                                                       new Color(0.63529414f, 0.5921569f, 0.5529412f, 1f),
-                                                                       1f);
 
             if (RiskOfOptionsCompat.Enabled)
             {

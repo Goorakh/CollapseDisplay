@@ -40,7 +40,6 @@ namespace CollapseDisplay
             }
 
             addDisplayOptions(CollapseDisplayPlugin.CollapseDisplayOptions);
-            addDisplayOptions(CollapseDisplayPlugin.WarpedEchoDisplayOptions);
 
             ModSettingsManager.SetModDescription("Options for Collapse Display", MOD_GUID, MOD_NAME);
 

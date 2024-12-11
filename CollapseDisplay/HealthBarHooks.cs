@@ -21,19 +21,14 @@ namespace CollapseDisplay
                                                                                          .ToArray();
 
             public readonly HealthBar.BarInfo CollapseDamageBarInfo;
-            public readonly HealthBar.BarInfo WarpedEchoDamageBarInfo;
 
             public readonly int EnabledBarCount;
 
-            public AdditionalBarInfos(HealthBar.BarInfo collapseDamageBarInfo, HealthBar.BarInfo warpedEchoDamageBarInfo)
+            public AdditionalBarInfos(HealthBar.BarInfo collapseDamageBarInfo)
             {
                 int enabledBarCount = 0;
                 CollapseDamageBarInfo = collapseDamageBarInfo;
                 if (CollapseDamageBarInfo.enabled)
-                    enabledBarCount++;
-
-                WarpedEchoDamageBarInfo = warpedEchoDamageBarInfo;
-                if (WarpedEchoDamageBarInfo.enabled)
                     enabledBarCount++;
 
                 EnabledBarCount = enabledBarCount;
@@ -155,21 +150,6 @@ namespace CollapseDisplay
                 normalizedXMax = 0
             };
 
-            DelayedDamageDisplayOptions warpedEchoDisplayOptions = CollapseDisplayPlugin.WarpedEchoDisplayOptions;
-            DelayedDamageBarStyle warpedEchoDamageBarStyle = warpedEchoDisplayOptions.GetDamageBarStyle(healthBarType);
-
-            HealthBarStyle.BarStyle warpedEchoIndicatorStyle = warpedEchoDamageBarStyle.BarStyle;
-            HealthBar.BarInfo warpedEchoBarInfo = new HealthBar.BarInfo
-            {
-                enabled = false,
-                color = warpedEchoIndicatorStyle.baseColor,
-                sprite = warpedEchoIndicatorStyle.sprite,
-                imageType = warpedEchoIndicatorStyle.imageType,
-                sizeDelta = warpedEchoIndicatorStyle.sizeDelta,
-                normalizedXMin = 0f,
-                normalizedXMax = 0f
-            };
-
             HealthComponent healthComponent = healthBar.source;
             if (healthComponent && healthComponent.TryGetComponent(out DelayedDamageProvider delayedDamageProvider))
             {
@@ -202,17 +182,12 @@ namespace CollapseDisplay
                 {
                     if (delayedDamageInfo.DamageTimestamp.timeUntil > 0f)
                     {
-                        float warpedEchoDisplayedDamage = delayedDamageInfo.Damage - healthComponent.barrier;
-                        if (warpedEchoDisplayedDamage > 0f)
+                        float damageAmount = delayedDamageInfo.Damage - healthComponent.barrier;
+                        if (damageAmount > 0f)
                         {
-                            addBar(ref barInfo, warpedEchoDisplayedDamage);
+                            addBar(ref barInfo, damageAmount);
                         }
                     }
-                }
-
-                if (warpedEchoDamageBarStyle.EnabledConfig.Value)
-                {
-                    tryAddDelayedDamageBar(delayedDamageProvider.WarpedEchoDamage, ref warpedEchoBarInfo);
                 }
 
                 if (collapseDamageBarStyle.EnabledConfig.Value)
@@ -221,7 +196,7 @@ namespace CollapseDisplay
                 }
             }
 
-            return new AdditionalBarInfos(collapseBarInfo, warpedEchoBarInfo);
+            return new AdditionalBarInfos(collapseBarInfo);
         }
     }
 }

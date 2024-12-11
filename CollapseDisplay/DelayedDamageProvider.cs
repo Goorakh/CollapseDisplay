@@ -12,11 +12,6 @@ namespace CollapseDisplay
 
         public DelayedDamageInfo CollapseDamage => _collapseDamage;
 
-        [SyncVar]
-        DelayedDamageInfo _warpedEchoDamage;
-
-        public DelayedDamageInfo WarpedEchoDamage => _warpedEchoDamage;
-
         CharacterBody _body;
         HealthComponent _healthComponent;
 
@@ -38,7 +33,6 @@ namespace CollapseDisplay
         void fixedUpdateServer()
         {
             DelayedDamageInfo collapseDamage = DelayedDamageInfo.None;
-            DelayedDamageInfo warpedEchoDamage = DelayedDamageInfo.None;
 
             if (_body)
             {
@@ -80,37 +74,9 @@ namespace CollapseDisplay
                         }
                     }
                 }
-
-                if (_body.incomingDamageList.Count > 0)
-                {
-                    float minDamageDelay = float.PositiveInfinity;
-
-                    warpedEchoDamage.Damage = 0f;
-                    foreach (CharacterBody.DelayedDamageInfo delayedDamage in _body.incomingDamageList)
-                    {
-                        minDamageDelay = Mathf.Min(minDamageDelay, delayedDamage.timeUntilDamage);
-
-                        DamageInfo halfDamageInfo = delayedDamage.halfDamage;
-
-                        float damage = halfDamageInfo.damage;
-
-                        modifyIncomingDamage(ref damage, halfDamageInfo);
-
-                        if (damage > 0f)
-                        {
-                            warpedEchoDamage.Damage += damage;
-                        }
-                    }
-
-                    if (float.IsFinite(minDamageDelay) && minDamageDelay > 0f)
-                    {
-                        warpedEchoDamage.DamageTimestamp = Run.FixedTimeStamp.now + minDamageDelay;
-                    }
-                }
             }
 
             _collapseDamage = collapseDamage;
-            _warpedEchoDamage = warpedEchoDamage;
         }
 
         void modifyIncomingDamage(ref float damage, DamageInfo damageInfo)

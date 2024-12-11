@@ -1,3 +1,8 @@
+**-.-.- Changes:**
+
+* Removed Warped Echo damage display
+  * This exact was added to vanilla, so that part of this mod became redundant
+
 **1.3.3 Changes:**
 
 * Fixed a couple cases where the displayed damage (primarily Warped Echo) would be incorrect
