@@ -1,5 +1,7 @@
 **-.-.- Changes:**
 
+* Fixed Collapse damage calculation after sots items patch.
+
 * Removed Warped Echo damage display
   * This feature was added to vanilla, so that part of this mod became redundant
 

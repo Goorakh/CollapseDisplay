@@ -100,6 +100,21 @@ namespace CollapseDisplay
                 }
             }
 
+            if ((damageInfo.damageType & DamageTypeExtended.DamagePercentOfMaxHealth) != 0)
+            {
+                damage = _healthComponent.fullHealth * 0.1f;
+            }
+
+            if (_body.HasBuff(DLC2Content.Buffs.KnockUpHitEnemiesJuggleCount))
+            {
+                damage *= 1f + (0.2f * _body.GetBuffCount(DLC2Content.Buffs.KnockUpHitEnemiesJuggleCount));
+            }
+
+            if (_body.HasBuff(DLC2Content.Buffs.lunarruin))
+            {
+                damage *= 1f + (0.1f * _body.GetBuffCount(DLC2Content.Buffs.lunarruin));
+            }
+
             if (attackerTeamIndex == _body.teamComponent.teamIndex)
             {
                 TeamDef attackerTeamDef = TeamCatalog.GetTeamDef(attackerTeamIndex);
@@ -139,12 +154,6 @@ namespace CollapseDisplay
                     if (fragileDamageBonusItemCount > 0)
                     {
                         damage *= 1f + (fragileDamageBonusItemCount * 0.2f);
-                    }
-
-                    if (attackerBody.HasBuff(DLC2Content.Buffs.LowerHealthHigherDamageBuff))
-                    {
-                        int lowerHealthHigherDamageItemCount = attackerMaster.inventory.GetItemCount(DLC2Content.Items.LowerHealthHigherDamage);
-                        damage *= 1f + (lowerHealthHigherDamageItemCount * 0.2f);
                     }
 
                     if (damageInfo.procCoefficient > 0f)
@@ -207,7 +216,7 @@ namespace CollapseDisplay
                 }
             }
 
-            if (_body.hasOneShotProtection)
+            if (_body.hasOneShotProtection && (damageInfo.damageType & DamageType.BypassOneShotProtection) == 0)
             {
                 float unprotectedHealth = (_healthComponent.fullCombinedHealth + _healthComponent.barrier) * (1f - _body.oneShotProtectionFraction);
                 float maxAllowedDamage = Mathf.Max(0f, unprotectedHealth - _healthComponent.serverDamageTakenThisUpdate);
@@ -236,9 +245,9 @@ namespace CollapseDisplay
                 }
             }
 
-            if (!damageInfo.delayedDamageSecondHalf && _body.HasBuff(DLC2Content.Buffs.DelayedDamageBuff))
+            if (!damageInfo.delayedDamageSecondHalf && !damageInfo.rejected && !damageInfo.firstHitOfDelayedDamageSecondHalf && _body.HasBuff(DLC2Content.Buffs.DelayedDamageBuff))
             {
-                damage *= 0.5f;
+                damage *= 0.7f;
             }
         }
     }
