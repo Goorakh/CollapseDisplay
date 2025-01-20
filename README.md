@@ -1,6 +1,6 @@
 # Collapse Display
 
-Displays how much damage Collapse and Warped Echo will deal on your health bar.
+Displays how much damage Collapse will deal on your health bar.
 
 ![CollapseDisplay_enemy](https://github.com/Goorakh/CollapseDisplay/blob/master/README%20Assets/CollapseDisplay_enemy.gif?raw=true)
 
