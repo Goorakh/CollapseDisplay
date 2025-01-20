@@ -1,4 +1,4 @@
-**-.-.- Changes:**
+**1.3.4 Changes:**
 
 * Fixed Collapse damage calculation after sots items patch.
 
