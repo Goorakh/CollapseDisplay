@@ -107,7 +107,7 @@ namespace CollapseDisplay
 
             if (_body.HasBuff(DLC2Content.Buffs.KnockUpHitEnemiesJuggleCount))
             {
-                damage *= 1f + (0.2f * _body.GetBuffCount(DLC2Content.Buffs.KnockUpHitEnemiesJuggleCount));
+                damage *= 1f + (0.1f * _body.GetBuffCount(DLC2Content.Buffs.KnockUpHitEnemiesJuggleCount));
             }
 
             if (_body.HasBuff(DLC2Content.Buffs.lunarruin))
@@ -247,7 +247,7 @@ namespace CollapseDisplay
 
             if (!damageInfo.delayedDamageSecondHalf && !damageInfo.rejected && !damageInfo.firstHitOfDelayedDamageSecondHalf && _body.HasBuff(DLC2Content.Buffs.DelayedDamageBuff))
             {
-                damage *= 0.7f;
+                damage *= 0.8f;
             }
         }
     }
