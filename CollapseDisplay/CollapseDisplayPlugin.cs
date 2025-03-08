@@ -13,7 +13,7 @@ namespace CollapseDisplay
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Gorakh";
         public const string PluginName = "CollapseDisplay";
-        public const string PluginVersion = "1.3.5";
+        public const string PluginVersion = "1.3.6";
 
         internal static CollapseDisplayPlugin Instance { get; private set; }
 

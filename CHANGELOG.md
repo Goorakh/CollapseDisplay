@@ -1,4 +1,4 @@
-**-.-.- Changes:**
+**1.3.6 Changes:**
 
 * Fixed damage calculations for Warped Echo and Breaching Fin changed in SotS phase 2 patch.
 
