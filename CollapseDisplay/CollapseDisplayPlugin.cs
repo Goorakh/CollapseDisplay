@@ -19,6 +19,8 @@ namespace CollapseDisplay
 
         public static DelayedDamageDisplayOptions CollapseDisplayOptions { get; private set; }
 
+        public static DelayedDamageDisplayOptions EssenceOfHeresyDisplayOptions { get; private set; }
+
         static Sprite _healthBarHighlight;
 
         void Awake()
@@ -48,6 +50,12 @@ namespace CollapseDisplay
                                                                      "Collapse",
                                                                      new Color(0.9882353f, 0.14509805f, 0.25882354f, 1f),
                                                                      1f);
+
+            EssenceOfHeresyDisplayOptions = new DelayedDamageDisplayOptions(healthBarHighlight,
+                                                                            Config,
+                                                                            "Heretic Ruin",
+                                                                            new Color32(0x29, 0x8A, 0xF2, 0xFF),
+                                                                            1f);
 
             if (RiskOfOptionsCompat.Enabled)
             {

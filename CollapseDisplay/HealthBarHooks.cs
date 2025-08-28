@@ -1,4 +1,5 @@
 ﻿using CollapseDisplay.Config;
+using CollapseDisplay.Utilities;
 using CollapseDisplay.Utilities.Extensions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -21,14 +22,19 @@ namespace CollapseDisplay
                                                                                          .ToArray();
 
             public readonly HealthBar.BarInfo CollapseDamageBarInfo;
+            public readonly HealthBar.BarInfo EssenceOfHeresyBarInfo;
 
             public readonly int EnabledBarCount;
 
-            public AdditionalBarInfos(HealthBar.BarInfo collapseDamageBarInfo)
+            public AdditionalBarInfos(HealthBar.BarInfo collapseDamageBarInfo, HealthBar.BarInfo essenceOfHeresyBarInfo)
             {
                 int enabledBarCount = 0;
                 CollapseDamageBarInfo = collapseDamageBarInfo;
                 if (CollapseDamageBarInfo.enabled)
+                    enabledBarCount++;
+
+                EssenceOfHeresyBarInfo = essenceOfHeresyBarInfo;
+                if (EssenceOfHeresyBarInfo.enabled)
                     enabledBarCount++;
 
                 EnabledBarCount = enabledBarCount;
@@ -135,9 +141,20 @@ namespace CollapseDisplay
                 healthBarType = healthBarTypeProvider.Type;
             }
 
-            DelayedDamageDisplayOptions collapseDisplayOptions = CollapseDisplayPlugin.CollapseDisplayOptions;
-            DelayedDamageBarStyle collapseDamageBarStyle = collapseDisplayOptions.GetDamageBarStyle(healthBarType);
+            DelayedDamageBarStyle essenceOfHeresyDamageBarStyle = CollapseDisplayPlugin.EssenceOfHeresyDisplayOptions.GetDamageBarStyle(healthBarType);
+            HealthBarStyle.BarStyle essenceOfHeresyIndicatorStyle = essenceOfHeresyDamageBarStyle.BarStyle;
+            HealthBar.BarInfo essenceOfHeresyBarInfo = new HealthBar.BarInfo
+            {
+                enabled = false,
+                color = essenceOfHeresyIndicatorStyle.baseColor,
+                sprite = essenceOfHeresyIndicatorStyle.sprite,
+                imageType = essenceOfHeresyIndicatorStyle.imageType,
+                sizeDelta = essenceOfHeresyIndicatorStyle.sizeDelta,
+                normalizedXMin = 0f,
+                normalizedXMax = 0
+            };
 
+            DelayedDamageBarStyle collapseDamageBarStyle = CollapseDisplayPlugin.CollapseDisplayOptions.GetDamageBarStyle(healthBarType);
             HealthBarStyle.BarStyle collapseIndicatorStyle = collapseDamageBarStyle.BarStyle;
             HealthBar.BarInfo collapseBarInfo = new HealthBar.BarInfo
             {
@@ -151,52 +168,74 @@ namespace CollapseDisplay
             };
 
             HealthComponent healthComponent = healthBar.source;
-            if (healthComponent && healthComponent.TryGetComponent(out DelayedDamageProvider delayedDamageProvider))
+
+            float totalBarDamageAmount = 0f;
+
+            void tryAddBar(ref HealthBar.BarInfo barInfo, float damageAmount)
             {
-                float totalBarDamageAmount = 0f;
+                damageAmount -= healthComponent.barrier;
+                if (damageAmount <= 0f)
+                    return;
 
-                void addBar(ref HealthBar.BarInfo barInfo, float damageAmount)
+                barInfo.enabled = true;
+
+                HealthComponent.HealthBarValues healthBarValues = healthComponent.GetHealthBarValues();
+
+                float currentHealth = healthComponent.combinedHealth;
+                float fullCombinedHealth = healthComponent.fullCombinedHealth;
+
+                float barEndHealthValue = Mathf.Max(0f, currentHealth - totalBarDamageAmount);
+                float barStartHealthValue = Mathf.Max(0f, barEndHealthValue - damageAmount);
+
+                float nonCurseFraction = 1f - healthBarValues.curseFraction;
+
+                float xMin = (barStartHealthValue / fullCombinedHealth) * nonCurseFraction;
+                barInfo.normalizedXMin = Mathf.Clamp01(xMin);
+
+                float xMax = (barEndHealthValue / fullCombinedHealth) * nonCurseFraction;
+                barInfo.normalizedXMax = Mathf.Clamp01(xMax);
+
+                totalBarDamageAmount += Mathf.Max(0f, barEndHealthValue - barStartHealthValue);
+            }
+
+            if (healthComponent)
+            {
+                if (healthComponent.body && healthBar.viewerBody)
                 {
-                    barInfo.enabled = true;
-
-                    HealthComponent.HealthBarValues healthBarValues = healthComponent.GetHealthBarValues();
-
-                    float currentHealth = healthComponent.combinedHealth;
-                    float fullCombinedHealth = healthComponent.fullCombinedHealth;
-
-                    float barEndHealthValue = Mathf.Max(0f, currentHealth - totalBarDamageAmount);
-                    float barStartHealthValue = Mathf.Max(0f, barEndHealthValue - damageAmount);
-
-                    float nonCurseFraction = 1f - healthBarValues.curseFraction;
-
-                    float xMin = (barStartHealthValue / fullCombinedHealth) * nonCurseFraction;
-                    barInfo.normalizedXMin = Mathf.Clamp01(xMin);
-
-                    float xMax = (barEndHealthValue / fullCombinedHealth) * nonCurseFraction;
-                    barInfo.normalizedXMax = Mathf.Clamp01(xMax);
-
-                    totalBarDamageAmount += Mathf.Max(0f, barEndHealthValue - barStartHealthValue);
-                }
-
-                void tryAddDelayedDamageBar(DelayedDamageInfo delayedDamageInfo, ref HealthBar.BarInfo barInfo)
-                {
-                    if (delayedDamageInfo.DamageTimestamp.timeUntil > 0f)
+                    int ruinStacks = healthComponent.body.GetBuffCount(RoR2Content.Buffs.LunarDetonationCharge);
+                    if (ruinStacks > 0 && essenceOfHeresyDamageBarStyle.EnabledConfig.Value)
                     {
-                        float damageAmount = delayedDamageInfo.Damage - healthComponent.barrier;
-                        if (damageAmount > 0f)
+                        float baseDamage = healthBar.viewerBody.damage * EntityStates.GlobalSkills.LunarDetonator.Detonate.baseDamageCoefficient;
+                        float damagePerStack = healthBar.viewerBody.damage * EntityStates.GlobalSkills.LunarDetonator.Detonate.damageCoefficientPerStack;
+
+                        float totalRuinDamage = HealthComponentUtils.EstimateTakeDamage(healthComponent, new DamageInfo
                         {
-                            addBar(ref barInfo, damageAmount);
-                        }
+                            damage = baseDamage + (ruinStacks * damagePerStack),
+                            attacker = healthBar.viewerBody.gameObject
+                        });
+
+                        tryAddBar(ref essenceOfHeresyBarInfo, totalRuinDamage);
                     }
                 }
 
-                if (collapseDamageBarStyle.EnabledConfig.Value)
+                if (healthComponent.TryGetComponent(out DelayedDamageProvider delayedDamageProvider))
                 {
-                    tryAddDelayedDamageBar(delayedDamageProvider.CollapseDamage, ref collapseBarInfo);
+                    void tryAddDelayedDamageBar(DelayedDamageInfo delayedDamageInfo, ref HealthBar.BarInfo barInfo)
+                    {
+                        if (delayedDamageInfo.DamageTimestamp.timeUntil > 0f)
+                        {
+                            tryAddBar(ref barInfo, delayedDamageInfo.Damage);
+                        }
+                    }
+
+                    if (collapseDamageBarStyle.EnabledConfig.Value)
+                    {
+                        tryAddDelayedDamageBar(delayedDamageProvider.CollapseDamage, ref collapseBarInfo);
+                    }
                 }
             }
 
-            return new AdditionalBarInfos(collapseBarInfo);
+            return new AdditionalBarInfos(collapseBarInfo, essenceOfHeresyBarInfo);
         }
     }
 }

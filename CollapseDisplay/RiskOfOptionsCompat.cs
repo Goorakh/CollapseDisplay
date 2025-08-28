@@ -41,6 +41,8 @@ namespace CollapseDisplay
 
             addDisplayOptions(CollapseDisplayPlugin.CollapseDisplayOptions);
 
+            addDisplayOptions(CollapseDisplayPlugin.EssenceOfHeresyDisplayOptions);
+
             ModSettingsManager.SetModDescription("Options for Collapse Display", MOD_GUID, MOD_NAME);
 
             FileInfo iconFile = null;
