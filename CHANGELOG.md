@@ -1,4 +1,4 @@
-**?.?.? Changes:**
+**1.4.0 Changes:**
 
 * Added damage display for Heretic Ruin.
 
