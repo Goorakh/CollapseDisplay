@@ -37,6 +37,7 @@ namespace CollapseDisplay
                 addDamageBarStyle(displayOptions.HUDHealthBarStyle);
                 addDamageBarStyle(displayOptions.AllyListHealthBarStyle);
                 addDamageBarStyle(displayOptions.CombatHealthBarStyle);
+                addDamageBarStyle(displayOptions.BaggedObjectBarStyle);
             }
 
             addDisplayOptions(CollapseDisplayPlugin.CollapseDisplayOptions);

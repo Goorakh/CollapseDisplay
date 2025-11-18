@@ -1,4 +1,5 @@
-﻿using RoR2.UI;
+﻿using RoR2;
+using RoR2.UI;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -8,6 +9,8 @@ namespace CollapseDisplay
     static class HealthBarTypeRegistration
     {
         static readonly HealthBarStyle _combatHealthBarStyle = Addressables.LoadAssetAsync<HealthBarStyle>("RoR2/Base/Common/CombatHealthBar.asset").WaitForCompletion();
+
+        static readonly HealthBarStyle _hudHealthBarStyle = Addressables.LoadAssetAsync<HealthBarStyle>("RoR2/Base/Common/HUDHealthBar.asset").WaitForCompletion();
 
         static readonly List<HealthBarTypeProvider> _addedPrefabProviders = [];
 
@@ -44,15 +47,14 @@ namespace CollapseDisplay
                 }
                 else
                 {
-#if DEBUG
                     Log.Debug($"Registered {healthBarsRegistered} health bar(s) as {type} on asset '{assetPath}'");
-#endif
                 }
             }
 
             registerHealthBarPrefab("RoR2/Base/UI/HUDSimple.prefab", HealthBarType.Hud);
             registerHealthBarPrefab("RoR2/Base/UI/CombatHealthbar.prefab", HealthBarType.Combat);
             registerHealthBarPrefab("RoR2/Base/UI/AllyCard.prefab", HealthBarType.AllyList);
+            registerHealthBarPrefab("RoR2/DLC3/Drifter/Bag UI.prefab", HealthBarType.BaggedObject);
         }
 
         public static void Cleanup()
@@ -76,8 +78,12 @@ namespace CollapseDisplay
                 {
                     barType = HealthBarType.Combat;
                 }
+                else if (self.style == _hudHealthBarStyle)
+                {
+                    barType = HealthBarType.Hud;
+                }
 
-                Log.Info($"Health bar {self} is not registered, assuming bar type of {barType}");
+                Log.Debug($"Health bar {Util.GetGameObjectHierarchyName(self.gameObject)} is not registered, assuming bar type of {barType}");
 
                 HealthBarTypeProvider typeProvider = self.gameObject.AddComponent<HealthBarTypeProvider>();
                 typeProvider.Type = barType;

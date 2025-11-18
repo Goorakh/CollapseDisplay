@@ -27,6 +27,7 @@ namespace CollapseDisplay.Config
                 HealthBarType.Hud => "Player HUD",
                 HealthBarType.AllyList => "Ally List",
                 HealthBarType.Combat => "Enemy",
+                HealthBarType.BaggedObject => "Drifter Bagged Object",
                 _ => throw new NotImplementedException($"Bar type {type} is not implemented")
             };
 

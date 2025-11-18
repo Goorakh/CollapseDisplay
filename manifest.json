@@ -1,12 +1,12 @@
 ﻿{
 	"name": "CollapseDisplay",
-	"authorName": "Gorakh",
-	"version_number": "1.4.0",
+	"author": "Gorakh",
+	"version_number": "1.4.1",
 	"website_url": "https://github.com/Goorakh/CollapseDisplay",
 	"description": "Displays how much damage Collapse will deal on your health bar.",
 	"dependencies": [
 		"bbepis-BepInExPack-5.4.2113",
 		"RiskofThunder-HookGenPatcher-1.2.5",
-		"RiskofThunder-R2API_Core-5.1.6"
+		"RiskofThunder-R2API_Core-5.1.7"
 	]
 }

@@ -18,6 +18,8 @@ namespace CollapseDisplay.Config
 
         public readonly DelayedDamageBarStyle CombatHealthBarStyle;
 
+        public readonly DelayedDamageBarStyle BaggedObjectBarStyle;
+
         public DelayedDamageBarStyle FallbackHealthBarStyle => CombatHealthBarStyle ?? AllyListHealthBarStyle ?? HUDHealthBarStyle;
 
         public DelayedDamageDisplayOptions(Sprite highlightSprite, ConfigFile file, string sectionName, Color defaultColor, float defaultIndicatorScale)
@@ -48,6 +50,14 @@ namespace CollapseDisplay.Config
                 sizeDelta = 1f,
                 sprite = highlightSprite
             }, this);
+
+            BaggedObjectBarStyle = new DelayedDamageBarStyle(file, sectionName, HealthBarType.BaggedObject, new HealthBarStyle.BarStyle
+            {
+                enabled = true,
+                imageType = Image.Type.Sliced,
+                sizeDelta = 1f,
+                sprite = highlightSprite
+            }, this);
         }
 
         public DelayedDamageBarStyle GetDamageBarStyle(HealthBarType barType)
@@ -57,6 +67,7 @@ namespace CollapseDisplay.Config
                 HealthBarType.Hud => HUDHealthBarStyle,
                 HealthBarType.Combat => CombatHealthBarStyle,
                 HealthBarType.AllyList => AllyListHealthBarStyle,
+                HealthBarType.BaggedObject => BaggedObjectBarStyle,
                 HealthBarType.Unknown => FallbackHealthBarStyle,
                 _ => throw new NotImplementedException($"{barType} is not implemented"),
             };

@@ -1,3 +1,7 @@
+**1.4.1 Changes:**
+
+* Updated for Alloyed Collective
+
 **1.4.0 Changes:**
 
 * Added damage display for Heretic Ruin.

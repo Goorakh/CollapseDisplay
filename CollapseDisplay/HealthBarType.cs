@@ -6,6 +6,7 @@
         Hud,
         Combat,
         AllyList,
+        BaggedObject,
         Count
     }
 }

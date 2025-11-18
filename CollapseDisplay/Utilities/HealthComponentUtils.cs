@@ -31,6 +31,7 @@ namespace CollapseDisplay.Utilities
 
             bool bypassArmor = (damageInfo.damageType & DamageType.BypassArmor) != 0;
             bool bypassBlock = (damageInfo.damageType & DamageType.BypassBlock) != 0;
+            bool damageIsElectrical = (damageInfo.damageType & DamageTypeExtended.Electrical) != 0;
 
             if ((damageInfo.damageType & DamageTypeExtended.DamagePercentOfMaxHealth) == DamageTypeExtended.DamagePercentOfMaxHealth)
             {
@@ -59,6 +60,11 @@ namespace CollapseDisplay.Utilities
             {
                 if (attackerBody)
                 {
+                    if (damageIsElectrical && attackerBody.HasBuff(DLC3Content.Buffs.ShockDamageEnergized))
+                    {
+                        damageInfo.crit = true;
+                    }
+
                     if (attackerBody.canPerformBackstab && (damageInfo.damageType & DamageType.DoT) != DamageType.DoT && (damageInfo.procChainMask.HasProc(ProcType.Backstab) || BackstabManager.IsBackstab(-hitPositionToAttackerCorePosition, victim.body)))
                     {
                         damageInfo.crit = true;
@@ -70,21 +76,21 @@ namespace CollapseDisplay.Utilities
                     {
                         if (combinedHealthBeforeDamage >= victim.fullCombinedHealth * 0.9f)
                         {
-                            int crowbarCount = attackerMaster.inventory.GetItemCount(RoR2Content.Items.Crowbar);
+                            int crowbarCount = attackerMaster.inventory.GetItemCountEffective(RoR2Content.Items.Crowbar);
                             if (crowbarCount > 0)
                             {
                                 damageInfo.damage *= 1f + (0.75f * crowbarCount);
                             }
                         }
 
-                        int nearbyDamageBonusCount = attackerMaster.inventory.GetItemCount(RoR2Content.Items.NearbyDamageBonus);
+                        int nearbyDamageBonusCount = attackerMaster.inventory.GetItemCountEffective(RoR2Content.Items.NearbyDamageBonus);
                         if (nearbyDamageBonusCount > 0 && hitPositionToAttackerCorePosition.sqrMagnitude <= 13f * 13f)
                         {
                             damageInfo.damageColorIndex = DamageColorIndex.Nearby;
                             damageInfo.damage *= 1f + (nearbyDamageBonusCount * 0.2f);
                         }
 
-                        int fragileDamageBonusCount = attackerMaster.inventory.GetItemCount(DLC1Content.Items.FragileDamageBonus);
+                        int fragileDamageBonusCount = attackerMaster.inventory.GetItemCountEffective(DLC1Content.Items.FragileDamageBonus);
                         if (fragileDamageBonusCount > 0)
                         {
                             damageInfo.damage *= 1f + (fragileDamageBonusCount * 0.2f);
@@ -101,7 +107,7 @@ namespace CollapseDisplay.Utilities
 
                         if (victim.body.isBoss)
                         {
-                            int bossDamageBonusCount = attackerMaster.inventory.GetItemCount(RoR2Content.Items.BossDamageBonus);
+                            int bossDamageBonusCount = attackerMaster.inventory.GetItemCountEffective(RoR2Content.Items.BossDamageBonus);
                             if (bossDamageBonusCount > 0)
                             {
                                 damageInfo.damage *= 1f + (0.2f * bossDamageBonusCount);
@@ -150,6 +156,12 @@ namespace CollapseDisplay.Utilities
                     if (victim.itemCounts.armorPlate > 0)
                     {
                         damageInfo.damage = Mathf.Max(1f, damageInfo.damage - (5f * victim.itemCounts.armorPlate));
+                    }
+
+                    int droneArmorBuffCount = victim.body.GetBuffCount(DLC3Content.Buffs.DroneArmor);
+                    if (droneArmorBuffCount > 0)
+                    {
+                        damageInfo.damage -= damageInfo.damage * (droneArmorBuffCount * 0.05f);
                     }
                 }
 
@@ -234,6 +246,25 @@ namespace CollapseDisplay.Utilities
                         {
                             executeFraction = executeEliteHealthFraction;
                         }
+                    }
+                }
+
+                // This check is intentionally done incorrectly, to mimic vanilla behavior as closely as possible
+                if (damageInfo.damageType.damageTypeExtended == DamageTypeExtended.Recycled && !victim.body.isBoss)
+				{
+                    float recycleExecuteFraction = 0.5f;
+                    if (executeFraction < recycleExecuteFraction)
+                    {
+                        executeFraction = recycleExecuteFraction;
+                    }
+                }
+
+                if ((damageInfo.damageType & DamageTypeExtended.Suffocate) != 0)
+				{
+                    float suffocateExecuteFraction = 0.2f;
+                    if (executeFraction < suffocateExecuteFraction)
+                    {
+                        executeFraction = suffocateExecuteFraction;
                     }
                 }
             }
