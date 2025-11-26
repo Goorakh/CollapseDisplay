@@ -6,7 +6,7 @@ Displays how much damage Collapse will deal on your health bar.
 
 ![CollapseDisplay_player](https://github.com/Goorakh/CollapseDisplay/blob/master/README%20Assets/CollapseDisplay_player.gif?raw=true)
 
-Also works with Heretic Ruin.
+Also displays the damage for Networked Suffering and Heretic Ruin.
 
 ## Disclaimers
 

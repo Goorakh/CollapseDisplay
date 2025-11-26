@@ -8,7 +8,7 @@ namespace CollapseDisplay
 {
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
     [BepInDependency(RiskOfOptions.PluginInfo.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
-    public class CollapseDisplayPlugin : BaseUnityPlugin
+    public sealed class CollapseDisplayPlugin : BaseUnityPlugin
     {
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Gorakh";
@@ -20,6 +20,8 @@ namespace CollapseDisplay
         public static DelayedDamageDisplayOptions CollapseDisplayOptions { get; private set; }
 
         public static DelayedDamageDisplayOptions EssenceOfHeresyDisplayOptions { get; private set; }
+
+        public static DelayedDamageDisplayOptions NetworkedSufferingDisplayOptions { get; private set; }
 
         static Sprite _healthBarHighlight;
 
@@ -54,8 +56,14 @@ namespace CollapseDisplay
             EssenceOfHeresyDisplayOptions = new DelayedDamageDisplayOptions(healthBarHighlight,
                                                                             Config,
                                                                             "Heretic Ruin",
-                                                                            new Color32(0x29, 0x8A, 0xF2, 0xFF),
+                                                                            new Color32(0x29, 0x8A, 0xF2, byte.MaxValue),
                                                                             1f);
+
+            NetworkedSufferingDisplayOptions = new DelayedDamageDisplayOptions(healthBarHighlight,
+                                                                               Config,
+                                                                               "Networked Suffering",
+                                                                               new Color32(0x46, 0xFC, 0x83, byte.MaxValue),
+                                                                               1f);
 
             if (RiskOfOptionsCompat.Enabled)
             {

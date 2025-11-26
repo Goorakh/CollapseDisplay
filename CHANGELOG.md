@@ -1,3 +1,7 @@
+**?.?.? Changes:**
+
+* Added damage display for Networked Suffering.
+
 **1.4.1 Changes:**
 
 * Updated for Alloyed Collective

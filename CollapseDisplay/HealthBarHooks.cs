@@ -1,6 +1,7 @@
 ﻿using CollapseDisplay.Config;
 using CollapseDisplay.Utilities;
 using CollapseDisplay.Utilities.Extensions;
+using HG;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
@@ -23,10 +24,11 @@ namespace CollapseDisplay
 
             public readonly HealthBar.BarInfo CollapseDamageBarInfo;
             public readonly HealthBar.BarInfo EssenceOfHeresyBarInfo;
+            public readonly HealthBar.BarInfo NetworkedSufferingBarInfo;
 
             public readonly int EnabledBarCount;
 
-            public AdditionalBarInfos(HealthBar.BarInfo collapseDamageBarInfo, HealthBar.BarInfo essenceOfHeresyBarInfo)
+            public AdditionalBarInfos(HealthBar.BarInfo collapseDamageBarInfo, HealthBar.BarInfo essenceOfHeresyBarInfo, HealthBar.BarInfo networkedSufferingBarInfo)
             {
                 int enabledBarCount = 0;
                 CollapseDamageBarInfo = collapseDamageBarInfo;
@@ -35,6 +37,10 @@ namespace CollapseDisplay
 
                 EssenceOfHeresyBarInfo = essenceOfHeresyBarInfo;
                 if (EssenceOfHeresyBarInfo.enabled)
+                    enabledBarCount++;
+
+                NetworkedSufferingBarInfo = networkedSufferingBarInfo;
+                if (NetworkedSufferingBarInfo.enabled)
                     enabledBarCount++;
 
                 EnabledBarCount = enabledBarCount;
@@ -154,6 +160,19 @@ namespace CollapseDisplay
                 normalizedXMax = 0
             };
 
+            DelayedDamageBarStyle networkedSufferingDamageBarStyle = CollapseDisplayPlugin.NetworkedSufferingDisplayOptions.GetDamageBarStyle(healthBarType);
+            HealthBarStyle.BarStyle networkedSufferingIndicatorStyle = networkedSufferingDamageBarStyle.BarStyle;
+            HealthBar.BarInfo networkedSufferingBarInfo = new HealthBar.BarInfo
+            {
+                enabled = false,
+                color = networkedSufferingIndicatorStyle.baseColor,
+                sprite = networkedSufferingIndicatorStyle.sprite,
+                imageType = networkedSufferingIndicatorStyle.imageType,
+                sizeDelta = networkedSufferingIndicatorStyle.sizeDelta,
+                normalizedXMin = 0f,
+                normalizedXMax = 0
+            };
+
             DelayedDamageBarStyle collapseDamageBarStyle = CollapseDisplayPlugin.CollapseDisplayOptions.GetDamageBarStyle(healthBarType);
             HealthBarStyle.BarStyle collapseIndicatorStyle = collapseDamageBarStyle.BarStyle;
             HealthBar.BarInfo collapseBarInfo = new HealthBar.BarInfo
@@ -200,21 +219,54 @@ namespace CollapseDisplay
 
             if (healthComponent)
             {
-                if (healthComponent.body && healthBar.viewerBody)
+                CharacterBody body = healthComponent.body;
+                if (body)
                 {
-                    int ruinStacks = healthComponent.body.GetBuffCount(RoR2Content.Buffs.LunarDetonationCharge);
-                    if (ruinStacks > 0 && essenceOfHeresyDamageBarStyle.EnabledConfig.Value)
+                    if (healthBar.viewerBody)
                     {
-                        float baseDamage = healthBar.viewerBody.damage * EntityStates.GlobalSkills.LunarDetonator.Detonate.baseDamageCoefficient;
-                        float damagePerStack = healthBar.viewerBody.damage * EntityStates.GlobalSkills.LunarDetonator.Detonate.damageCoefficientPerStack;
-
-                        float totalRuinDamage = HealthComponentUtils.EstimateTakeDamage(healthComponent, new DamageInfo
+                        int ruinStacks = body.GetBuffCount(RoR2Content.Buffs.LunarDetonationCharge);
+                        if (ruinStacks > 0 && essenceOfHeresyDamageBarStyle.EnabledConfig.Value)
                         {
-                            damage = baseDamage + (ruinStacks * damagePerStack),
-                            attacker = healthBar.viewerBody.gameObject
-                        });
+                            float baseDamage = healthBar.viewerBody.damage * EntityStates.GlobalSkills.LunarDetonator.Detonate.baseDamageCoefficient;
+                            float damagePerStack = healthBar.viewerBody.damage * EntityStates.GlobalSkills.LunarDetonator.Detonate.damageCoefficientPerStack;
 
-                        tryAddBar(ref essenceOfHeresyBarInfo, totalRuinDamage);
+                            float totalRuinDamage = HealthComponentUtils.EstimateTakeDamage(healthComponent, new DamageInfo
+                            {
+                                damage = baseDamage + (ruinStacks * damagePerStack),
+                                attacker = healthBar.viewerBody.gameObject
+                            });
+
+                            if (totalRuinDamage > 0f)
+                            {
+                                tryAddBar(ref essenceOfHeresyBarInfo, totalRuinDamage);
+                            }
+                        }
+                    }
+
+                    TeamIndex teamIndex = body.teamComponent ? body.teamComponent.teamIndex : TeamIndex.None;
+                    if (teamIndex != TeamIndex.None)
+                    {
+                        if (networkedSufferingDamageBarStyle.EnabledConfig.Value &&
+                            body.HasBuff(DLC3Content.Buffs.SharedSuffering) &&
+                            SharedSufferingManager.instance &&
+                            SharedSufferingManager.instance.hasPendingDamage)
+                        {
+                            float pendingDamage = ArrayUtils.GetSafe(SharedSufferingManager.instance.damagePools, (int)body.teamComponent.teamIndex);
+                            if (pendingDamage > 0f)
+                            {
+                                float estimatedDamage = HealthComponentUtils.EstimateTakeDamage(healthComponent, new DamageInfo
+                                {
+                                    attacker = null,
+                                    damage = pendingDamage,
+                                    damageType = DamageType.BypassArmor
+                                });
+
+                                if (estimatedDamage > 0f)
+                                {
+                                    tryAddBar(ref networkedSufferingBarInfo, estimatedDamage);
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -235,7 +287,7 @@ namespace CollapseDisplay
                 }
             }
 
-            return new AdditionalBarInfos(collapseBarInfo, essenceOfHeresyBarInfo);
+            return new AdditionalBarInfos(collapseBarInfo, essenceOfHeresyBarInfo, networkedSufferingBarInfo);
         }
     }
 }
