@@ -1,4 +1,4 @@
-**?.?.? Changes:**
+**1.5.0 Changes:**
 
 * Added damage display for Networked Suffering.
 
