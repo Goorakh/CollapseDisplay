@@ -1,7 +1,7 @@
 ﻿{
 	"name": "CollapseDisplay",
 	"author": "Gorakh",
-	"version_number": "1.5.0",
+	"version_number": "1.5.1",
 	"website_url": "https://github.com/Goorakh/CollapseDisplay",
 	"description": "Displays how much damage Collapse will deal on your health bar.",
 	"dependencies": [

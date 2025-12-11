@@ -1,3 +1,7 @@
+**1.5.1 Changes:**
+
+* Updated for Alloyed Collective patch v1.4.1
+
 **1.5.0 Changes:**
 
 * Added damage display for Networked Suffering.
