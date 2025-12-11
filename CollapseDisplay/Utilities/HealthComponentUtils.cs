@@ -32,6 +32,7 @@ namespace CollapseDisplay.Utilities
             bool bypassArmor = (damageInfo.damageType & DamageType.BypassArmor) != 0;
             bool bypassBlock = (damageInfo.damageType & DamageType.BypassBlock) != 0;
             bool damageIsElectrical = (damageInfo.damageType & DamageTypeExtended.Electrical) != 0;
+            bool bypassDamageCalculations = (damageInfo.damageType & DamageTypeExtended.BypassDamageCalculations) != 0;
 
             if ((damageInfo.damageType & DamageTypeExtended.DamagePercentOfMaxHealth) == DamageTypeExtended.DamagePercentOfMaxHealth)
             {
@@ -40,103 +41,103 @@ namespace CollapseDisplay.Utilities
 
             KnockbackFinUtil.ModifyDamageInfo(ref damageInfo, attackerBody, victim.body);
 
-            if (victim.body.HasBuff(DLC2Content.Buffs.lunarruin))
+            if (!bypassDamageCalculations)
             {
-                float lunarRuinDamageCoefficient = victim.body.GetBuffCount(DLC2Content.Buffs.lunarruin) * 0.1f;
-                float lunarRuinDamage = damageInfo.damage * lunarRuinDamageCoefficient;
-                damageInfo.damage += lunarRuinDamage;
-            }
-
-            if (attackerTeamIndex == victim.body.teamComponent.teamIndex)
-            {
-                TeamDef attackerTeamDef = TeamCatalog.GetTeamDef(attackerTeamIndex);
-                if (attackerTeamDef != null)
+                if (victim.body.HasBuff(DLC2Content.Buffs.lunarruin))
                 {
-                    damageInfo.damage *= attackerTeamDef.friendlyFireScaling;
+                    float lunarRuinDamageCoefficient = victim.body.GetBuffCount(DLC2Content.Buffs.lunarruin) * 0.1f;
+                    float lunarRuinDamage = damageInfo.damage * lunarRuinDamageCoefficient;
+                    damageInfo.damage += lunarRuinDamage;
                 }
-            }
 
-            if (damageInfo.damage > 0f)
-            {
-                if (attackerBody)
+                if (attackerTeamIndex == victim.body.teamComponent.teamIndex)
                 {
-                    if (damageIsElectrical && attackerBody.HasBuff(DLC3Content.Buffs.ShockDamageEnergized))
+                    TeamDef attackerTeamDef = TeamCatalog.GetTeamDef(attackerTeamIndex);
+                    if (attackerTeamDef != null)
                     {
-                        damageInfo.crit = true;
+                        damageInfo.damage *= attackerTeamDef.friendlyFireScaling;
                     }
+                }
 
-                    if (attackerBody.canPerformBackstab && (damageInfo.damageType & DamageType.DoT) != DamageType.DoT && (damageInfo.procChainMask.HasProc(ProcType.Backstab) || BackstabManager.IsBackstab(-hitPositionToAttackerCorePosition, victim.body)))
+                if (damageInfo.damage > 0f)
+                {
+                    if (attackerBody)
                     {
-                        damageInfo.crit = true;
-                        damageInfo.procChainMask.AddProc(ProcType.Backstab);
-                    }
-
-                    attackerMaster = attackerBody.master;
-                    if (attackerMaster && attackerMaster.inventory)
-                    {
-                        if (combinedHealthBeforeDamage >= victim.fullCombinedHealth * 0.9f)
+                        if (damageIsElectrical && attackerBody.HasBuff(DLC3Content.Buffs.ShockDamageEnergized))
                         {
-                            int crowbarCount = attackerMaster.inventory.GetItemCountEffective(RoR2Content.Items.Crowbar);
-                            if (crowbarCount > 0)
+                            damageInfo.crit = true;
+                        }
+
+                        if (attackerBody.canPerformBackstab && (damageInfo.damageType & DamageType.DoT) != DamageType.DoT && (damageInfo.procChainMask.HasProc(ProcType.Backstab) || BackstabManager.IsBackstab(-hitPositionToAttackerCorePosition, victim.body)))
+                        {
+                            damageInfo.crit = true;
+                            damageInfo.procChainMask.AddProc(ProcType.Backstab);
+                        }
+
+                        attackerMaster = attackerBody.master;
+                        if (attackerMaster && attackerMaster.inventory)
+                        {
+                            if (combinedHealthBeforeDamage >= victim.fullCombinedHealth * 0.9f)
                             {
-                                damageInfo.damage *= 1f + (0.75f * crowbarCount);
+                                int crowbarCount = attackerMaster.inventory.GetItemCountEffective(RoR2Content.Items.Crowbar);
+                                if (crowbarCount > 0)
+                                {
+                                    damageInfo.damage *= 1f + (0.75f * crowbarCount);
+                                }
+                            }
+
+                            int nearbyDamageBonusCount = attackerMaster.inventory.GetItemCountEffective(RoR2Content.Items.NearbyDamageBonus);
+                            if (nearbyDamageBonusCount > 0 && hitPositionToAttackerCorePosition.sqrMagnitude <= 13f * 13f)
+                            {
+                                damageInfo.damageColorIndex = DamageColorIndex.Nearby;
+                                damageInfo.damage *= 1f + (nearbyDamageBonusCount * 0.2f);
+                            }
+
+                            int fragileDamageBonusCount = attackerMaster.inventory.GetItemCountEffective(DLC1Content.Items.FragileDamageBonus);
+                            if (fragileDamageBonusCount > 0)
+                            {
+                                damageInfo.damage *= 1f + (fragileDamageBonusCount * 0.2f);
+                            }
+
+                            if (damageInfo.procCoefficient > 0f)
+                            {
+                                if (victim.body.HasBuff(RoR2Content.Buffs.MercExpose) && attackerBody && attackerBody.bodyIndex == BodyCatalog.FindBodyIndex("MercBody"))
+                                {
+                                    float exposeDamage = attackerBody.damage * 3.5f;
+                                    damageInfo.damage += exposeDamage;
+                                }
+                            }
+
+                            if (victim.body.isBoss)
+                            {
+                                int bossDamageBonusCount = attackerMaster.inventory.GetItemCountEffective(RoR2Content.Items.BossDamageBonus);
+                                if (bossDamageBonusCount > 0)
+                                {
+                                    damageInfo.damage *= 1f + (0.2f * bossDamageBonusCount);
+                                    damageInfo.damageColorIndex = DamageColorIndex.WeakPoint;
+                                }
                             }
                         }
 
-                        int nearbyDamageBonusCount = attackerMaster.inventory.GetItemCountEffective(RoR2Content.Items.NearbyDamageBonus);
-                        if (nearbyDamageBonusCount > 0 && hitPositionToAttackerCorePosition.sqrMagnitude <= 13f * 13f)
+                        if (damageInfo.crit)
                         {
-                            damageInfo.damageColorIndex = DamageColorIndex.Nearby;
-                            damageInfo.damage *= 1f + (nearbyDamageBonusCount * 0.2f);
-                        }
-
-                        int fragileDamageBonusCount = attackerMaster.inventory.GetItemCountEffective(DLC1Content.Items.FragileDamageBonus);
-                        if (fragileDamageBonusCount > 0)
-                        {
-                            damageInfo.damage *= 1f + (fragileDamageBonusCount * 0.2f);
-                        }
-
-                        if (damageInfo.procCoefficient > 0f)
-                        {
-                            if (victim.body.HasBuff(RoR2Content.Buffs.MercExpose) && attackerBody && attackerBody.bodyIndex == BodyCatalog.FindBodyIndex("MercBody"))
-                            {
-                                float exposeDamage = attackerBody.damage * 3.5f;
-                                damageInfo.damage += exposeDamage;
-                            }
-                        }
-
-                        if (victim.body.isBoss)
-                        {
-                            int bossDamageBonusCount = attackerMaster.inventory.GetItemCountEffective(RoR2Content.Items.BossDamageBonus);
-                            if (bossDamageBonusCount > 0)
-                            {
-                                damageInfo.damage *= 1f + (0.2f * bossDamageBonusCount);
-                                damageInfo.damageColorIndex = DamageColorIndex.WeakPoint;
-                            }
+                            damageInfo.damage *= attackerBody.critMultiplier;
                         }
                     }
 
-                    if (damageInfo.crit)
+                    if ((damageInfo.damageType & DamageType.WeakPointHit) != 0)
                     {
-                        damageInfo.damage *= attackerBody.critMultiplier;
+                        damageInfo.damage *= 1.5f;
+                        damageInfo.damageColorIndex = DamageColorIndex.WeakPoint;
                     }
-                }
 
-                if ((damageInfo.damageType & DamageType.WeakPointHit) != 0)
-                {
-                    damageInfo.damage *= 1.5f;
-                    damageInfo.damageColorIndex = DamageColorIndex.WeakPoint;
-                }
+                    if (victim.body.HasBuff(RoR2Content.Buffs.DeathMark))
+                    {
+                        damageInfo.damage *= 1.5f;
+                        damageInfo.damageColorIndex = DamageColorIndex.DeathMark;
+                    }
 
-                if (victim.body.HasBuff(RoR2Content.Buffs.DeathMark))
-                {
-                    damageInfo.damage *= 1.5f;
-                    damageInfo.damageColorIndex = DamageColorIndex.DeathMark;
-                }
-
-                if (!bypassArmor)
-                {
-                    if (!damageInfo.delayedDamageSecondHalf)
+                    if (!bypassArmor)
                     {
                         float armor = victim.body.armor;
                         armor += victim.adaptiveArmorValue;
@@ -151,48 +152,48 @@ namespace CollapseDisplay.Utilities
                                                                   : (2f - (100f / (100f - armor)));
 
                         damageInfo.damage = Mathf.Max(1f, damageInfo.damage * armorDamageMultiplier);
+
+                        if (victim.itemCounts.armorPlate > 0)
+                        {
+                            damageInfo.damage = Mathf.Max(1f, damageInfo.damage - (5f * victim.itemCounts.armorPlate));
+                        }
+
+                        int droneArmorBuffCount = victim.body.GetBuffCount(DLC3Content.Buffs.DroneArmor);
+                        if (droneArmorBuffCount > 0)
+                        {
+                            damageInfo.damage -= damageInfo.damage * (droneArmorBuffCount * 0.05f);
+                        }
                     }
 
-                    if (victim.itemCounts.armorPlate > 0)
+                    if (victim.body.hasOneShotProtection && (damageInfo.damageType & DamageType.BypassOneShotProtection) != DamageType.BypassOneShotProtection)
                     {
-                        damageInfo.damage = Mathf.Max(1f, damageInfo.damage - (5f * victim.itemCounts.armorPlate));
+                        float num7 = (victim.fullCombinedHealth + victim.barrier) * (1f - victim.body.oneShotProtectionFraction);
+                        float b = Mathf.Max(0f, num7 - victim.serverDamageTakenThisUpdate);
+                        damageInfo.damage = Mathf.Min(damageInfo.damage, b);
                     }
 
-                    int droneArmorBuffCount = victim.body.GetBuffCount(DLC3Content.Buffs.DroneArmor);
-                    if (droneArmorBuffCount > 0)
+                    if ((damageInfo.damageType & DamageType.BonusToLowHealth) != 0)
                     {
-                        damageInfo.damage -= damageInfo.damage * (droneArmorBuffCount * 0.05f);
+                        float num9 = Mathf.Lerp(3f, 1f, victim.combinedHealthFraction);
+                        damageInfo.damage *= num9;
+                    }
+
+                    if (victim.body.HasBuff(RoR2Content.Buffs.LunarShell) && damageInfo.damage > victim.fullHealth * 0.1f)
+                    {
+                        damageInfo.damage = victim.fullHealth * 0.1f;
+                    }
+
+                    if (victim.itemCounts.minHealthPercentage > 0)
+                    {
+                        float num10 = victim.fullCombinedHealth * (victim.itemCounts.minHealthPercentage / 100f);
+                        damageInfo.damage = Mathf.Max(0f, Mathf.Min(damageInfo.damage, victim.combinedHealth - num10));
                     }
                 }
+            }
 
-                if (!bypassBlock && damageInfo.damage > 0f && !damageInfo.delayedDamageSecondHalf && !damageInfo.rejected && !damageInfo.firstHitOfDelayedDamageSecondHalf && victim.body.HasBuff(DLC2Content.Buffs.DelayedDamageBuff))
-                {
-                    damageInfo.damage *= 0.8f;
-                }
-
-                if (victim.body.hasOneShotProtection && (damageInfo.damageType & DamageType.BypassOneShotProtection) != DamageType.BypassOneShotProtection)
-                {
-                    float num7 = (victim.fullCombinedHealth + victim.barrier) * (1f - victim.body.oneShotProtectionFraction);
-                    float b = Mathf.Max(0f, num7 - victim.serverDamageTakenThisUpdate);
-                    damageInfo.damage = Mathf.Min(damageInfo.damage, b);
-                }
-
-                if ((damageInfo.damageType & DamageType.BonusToLowHealth) != 0)
-                {
-                    float num9 = Mathf.Lerp(3f, 1f, victim.combinedHealthFraction);
-                    damageInfo.damage *= num9;
-                }
-
-                if (victim.body.HasBuff(RoR2Content.Buffs.LunarShell) && damageInfo.damage > victim.fullHealth * 0.1f)
-                {
-                    damageInfo.damage = victim.fullHealth * 0.1f;
-                }
-
-                if (victim.itemCounts.minHealthPercentage > 0)
-                {
-                    float num10 = victim.fullCombinedHealth * (victim.itemCounts.minHealthPercentage / 100f);
-                    damageInfo.damage = Mathf.Max(0f, Mathf.Min(damageInfo.damage, victim.combinedHealth - num10));
-                }
+            if (!bypassBlock && damageInfo.damage > 0f && !damageInfo.delayedDamageSecondHalf && !damageInfo.rejected && !damageInfo.firstHitOfDelayedDamageSecondHalf && victim.body.HasBuff(DLC2Content.Buffs.DelayedDamageBuff))
+            {
+                damageInfo.damage *= 0.9f;
             }
 
             float barrierDamage = Mathf.Min(damageInfo.damage, victim.barrier);
