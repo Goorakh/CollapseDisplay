@@ -36,11 +36,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />
-    <PackageReference Include="R2API.Core" Version="5.2.0" />
-    <PackageReference Include="RiskOfRain2.GameLibs" Version="1.4.0-r.0" GeneratePathProperty="true" />
+    <PackageReference Include="R2API.Core" Version="5.3.0" />
+    <PackageReference Include="RiskOfRain2.GameLibs" Version="1.4.1-r.0" GeneratePathProperty="true" />
     <PackageReference Include="Rune580-Risk_Of_Options" Version="2.8.2" />
     <PackageReference Include="UnityEngine.Modules" Version="2021.3.33" GeneratePathProperty="true" />
-    <PackageReference Include="MMHOOK.RoR2" Version="2025.11.19">
+    <PackageReference Include="MMHOOK.RoR2" Version="2025.12.9">
       <NoWarn>NU1701</NoWarn>
     </PackageReference>
 
@@ -124,7 +124,8 @@
     <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(TSPackagePluginDir)/lang/%(RecursiveDir)" />
 
     <Delete Files="$(TSPackagePluginDir)/$(AssemblyName).dll" />
-    <Delete Files="$(TSPackagePluginDir)/$(AssemblyName).pdb" Condition="'$(Configuration)'=='Release'" ContinueOnError="true" />
+    <Delete Files="$(TSPackagePluginDir)/$(AssemblyName).xml" />
+    <Delete Files="$(TSPackagePluginDir)/$(AssemblyName).pdb" ContinueOnError="true" />
     
     <Exec Command="Unity.UNetWeaver.exe $(PkgUnityEngine_Modules)\lib\netstandard2.0\UnityEngine.CoreModule.dll $(PkgRiskOfRain2_GameLibs)\lib\netstandard2.0\com.unity.multiplayer-hlapi.Runtime.dll $(TSPackagePluginDir) $(SolutionDir)$(ProjectName)\$(OutDir)$(AssemblyName).dll $(NugetPackageRoot)\netstandard.library.ref\2.1.0\ref\netstandard2.1" WorkingDirectory="$(ProjectDir)\NetworkWeaver" />
     
@@ -134,7 +135,8 @@
     </PropertyGroup>
     
     <Copy SourceFiles="$(OutDir)$(AssemblyName).dll" DestinationFolder="$(TSPackagePluginDir)" Condition="!$(NetWeaverHasOutput)" />
-    <Copy SourceFiles="$(OutDir)$(AssemblyName).pdb" DestinationFolder="$(TSPackagePluginDir)" Condition="'$(Configuration)'=='Debug'" ContinueOnError="true" />
+    <Copy SourceFiles="$(OutDir)$(AssemblyName).xml" DestinationFolder="$(TSPackagePluginDir)" ContinueOnError="true" />
+    <Copy SourceFiles="$(OutDir)$(AssemblyName).pdb" DestinationFolder="$(TSPackagePluginDir)" ContinueOnError="true" />
     
     <Delete Files="$(TSPackagePluginDir)/$(AssemblyName).dll.mdb" Condition="$(NetWeaverHasOutput)" ContinueOnError="true" />
       
