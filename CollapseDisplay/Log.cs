@@ -10,9 +10,10 @@ namespace CollapseDisplay
         static readonly StringBuilder _sharedStringBuilder = new StringBuilder(256);
         static readonly object _stringBuilderLock = new object();
 
-        static readonly int _cachedCallerPathPrefixLength;
-
         static ManualLogSource _logSource;
+
+#if DEBUG
+        static readonly int _cachedCallerPathPrefixLength;
 
         static Log()
         {
@@ -34,6 +35,7 @@ namespace CollapseDisplay
                 }
             }
         }
+#endif
 
         internal static void Init(ManualLogSource logSource)
         {
@@ -45,7 +47,11 @@ namespace CollapseDisplay
             lock (_stringBuilderLock)
             {
                 return _sharedStringBuilder.Clear()
+#if DEBUG
                                            .Append(callerPath, _cachedCallerPathPrefixLength, callerPath.Length - _cachedCallerPathPrefixLength)
+#else
+                                           .Append(callerPath)
+#endif
                                            .Append(':').Append(callerLineNumber)
                                            .Append(" (").Append(callerMemberName).Append("): ")
                                            .Append(data)
