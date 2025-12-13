@@ -1,5 +1,6 @@
 using BepInEx;
 using CollapseDisplay.Config;
+using RoR2BepInExPack.GameAssetPaths.Version_1_39_0;
 using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -33,33 +34,36 @@ namespace CollapseDisplay
 
             Instance = SingletonHelper.Assign(Instance, this);
 
+            Sprite healthBarHighlightSprite;
+
             Texture2D healthBarHighlightTexture = new Texture2D(1, 1);
             if (healthBarHighlightTexture.LoadImage(Properties.Resources.HealthBarHighlight_Opaque))
             {
-                _healthBarHighlight = Sprite.Create(healthBarHighlightTexture, new Rect(0f, 0f, healthBarHighlightTexture.width, healthBarHighlightTexture.height), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.Tight, new Vector4(4, 3, 3, 4));
-                _healthBarHighlight.name = "HealthBarHighlightOpaque";
+                healthBarHighlightTexture.name = "texHealthBarHighlightOpaque";
+
+                healthBarHighlightSprite = Sprite.Create(healthBarHighlightTexture, new Rect(0f, 0f, healthBarHighlightTexture.width, healthBarHighlightTexture.height), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.Tight, new Vector4(4, 3, 3, 4));
+                healthBarHighlightSprite.name = healthBarHighlightTexture.name;
             }
             else
             {
                 Log.Error("Failed to load health bar overlay texture");
-                _healthBarHighlight = null;
+                Destroy(healthBarHighlightTexture);
+                healthBarHighlightSprite = Addressables.LoadAssetAsync<Sprite>(RoR2_Base_Common.texUIHighlightExecute_png_texUIHighlightExecute_).WaitForCompletion();
             }
 
-            Sprite healthBarHighlight = _healthBarHighlight ? _healthBarHighlight : Addressables.LoadAssetAsync<Sprite>("RoR2/Base/Common/texUIHighlightExecute.png").WaitForCompletion();
-
-            CollapseDisplayOptions = new DelayedDamageDisplayOptions(healthBarHighlight,
+            CollapseDisplayOptions = new DelayedDamageDisplayOptions(healthBarHighlightSprite,
                                                                      Config,
                                                                      "Collapse",
                                                                      new Color(0.9882353f, 0.14509805f, 0.25882354f, 1f),
                                                                      1f);
 
-            EssenceOfHeresyDisplayOptions = new DelayedDamageDisplayOptions(healthBarHighlight,
+            EssenceOfHeresyDisplayOptions = new DelayedDamageDisplayOptions(healthBarHighlightSprite,
                                                                             Config,
                                                                             "Heretic Ruin",
                                                                             new Color32(0x29, 0x8A, 0xF2, byte.MaxValue),
                                                                             1f);
 
-            NetworkedSufferingDisplayOptions = new DelayedDamageDisplayOptions(healthBarHighlight,
+            NetworkedSufferingDisplayOptions = new DelayedDamageDisplayOptions(healthBarHighlightSprite,
                                                                                Config,
                                                                                "Networked Suffering",
                                                                                new Color32(0x46, 0xFC, 0x83, byte.MaxValue),
@@ -75,7 +79,7 @@ namespace CollapseDisplay
             DelayedDamageProviderHooks.Initialize();
 
             stopwatch.Stop();
-            Log.Info_NoCallerPrefix($"Initialized in {stopwatch.Elapsed.TotalSeconds:F2} seconds");
+            Log.Info_NoCallerPrefix($"Initialized in {stopwatch.Elapsed.TotalMilliseconds:F0}ms");
         }
 
         void OnDestroy()

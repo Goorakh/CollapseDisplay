@@ -1,5 +1,6 @@
 ﻿using RoR2;
 using RoR2.UI;
+using RoR2BepInExPack.GameAssetPaths.Version_1_39_0;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -8,9 +9,9 @@ namespace CollapseDisplay
 {
     static class HealthBarTypeRegistration
     {
-        static readonly HealthBarStyle _combatHealthBarStyle = Addressables.LoadAssetAsync<HealthBarStyle>("RoR2/Base/Common/CombatHealthBar.asset").WaitForCompletion();
+        static readonly HealthBarStyle _combatHealthBarStyle = Addressables.LoadAssetAsync<HealthBarStyle>(RoR2_Base_Common.CombatHealthBar_asset).WaitForCompletion();
 
-        static readonly HealthBarStyle _hudHealthBarStyle = Addressables.LoadAssetAsync<HealthBarStyle>("RoR2/Base/Common/HUDHealthBar.asset").WaitForCompletion();
+        static readonly HealthBarStyle _hudHealthBarStyle = Addressables.LoadAssetAsync<HealthBarStyle>(RoR2_Base_Common.HUDHealthBar_asset).WaitForCompletion();
 
         static readonly List<HealthBarTypeProvider> _addedPrefabProviders = [];
 
@@ -43,18 +44,19 @@ namespace CollapseDisplay
 
                 if (healthBarsRegistered == 0)
                 {
-                    Log.Warning($"No health bars found on asset '{assetPath}'");
+                    Log.Warning($"No health bars found on asset '{prefab.name}'");
                 }
                 else
                 {
-                    Log.Debug($"Registered {healthBarsRegistered} health bar(s) as {type} on asset '{assetPath}'");
+                    Log.Debug($"Registered {healthBarsRegistered} health bar(s) as {type} on asset '{prefab.name}'");
                 }
             }
 
-            registerHealthBarPrefab("RoR2/Base/UI/HUDSimple.prefab", HealthBarType.Hud);
-            registerHealthBarPrefab("RoR2/Base/UI/CombatHealthbar.prefab", HealthBarType.Combat);
-            registerHealthBarPrefab("RoR2/Base/UI/AllyCard.prefab", HealthBarType.AllyList);
-            registerHealthBarPrefab("RoR2/DLC3/Drifter/Bag UI.prefab", HealthBarType.BaggedObject);
+            registerHealthBarPrefab(RoR2_Base_UI.HUDSimple_prefab, HealthBarType.Hud);
+            registerHealthBarPrefab(RoR2_Base_UI.HUDSimple_Big_prefab, HealthBarType.Hud);
+            registerHealthBarPrefab(RoR2_Base_UI.CombatHealthbar_prefab, HealthBarType.Combat);
+            registerHealthBarPrefab(RoR2_Base_UI.AllyCard_prefab, HealthBarType.AllyList);
+            registerHealthBarPrefab(RoR2_DLC3_Drifter.Bag_UI_prefab, HealthBarType.BaggedObject);
         }
 
         public static void Cleanup()
