@@ -1,4 +1,4 @@
-**?.?.? Changes:**
+**1.5.2 Changes:**
 
 * Added missing R2API.Core dependency attribute.
 
