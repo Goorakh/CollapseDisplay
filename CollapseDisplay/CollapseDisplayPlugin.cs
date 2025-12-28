@@ -8,6 +8,7 @@ using UnityEngine.AddressableAssets;
 namespace CollapseDisplay
 {
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
+    [BepInDependency(R2API.R2API.PluginGUID)]
     [BepInDependency(RiskOfOptions.PluginInfo.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class CollapseDisplayPlugin : BaseUnityPlugin
     {
@@ -23,8 +24,6 @@ namespace CollapseDisplay
         public static DelayedDamageDisplayOptions EssenceOfHeresyDisplayOptions { get; private set; }
 
         public static DelayedDamageDisplayOptions NetworkedSufferingDisplayOptions { get; private set; }
-
-        static Sprite _healthBarHighlight;
 
         void Awake()
         {

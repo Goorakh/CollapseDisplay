@@ -1,3 +1,7 @@
+**?.?.? Changes:**
+
+* Added missing R2API.Core dependency attribute.
+
 **1.5.1 Changes:**
 
 * Updated for Alloyed Collective patch v1.4.1
