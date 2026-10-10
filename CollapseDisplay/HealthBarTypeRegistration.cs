@@ -76,11 +76,11 @@ namespace CollapseDisplay
             if (!self.GetComponent<HealthBarTypeProvider>())
             {
                 HealthBarType barType = HealthBarType.Unknown;
-                if (self.style == _combatHealthBarStyle)
+                if (self._style == _combatHealthBarStyle)
                 {
                     barType = HealthBarType.Combat;
                 }
-                else if (self.style == _hudHealthBarStyle)
+                else if (self._style == _hudHealthBarStyle)
                 {
                     barType = HealthBarType.Hud;
                 }
